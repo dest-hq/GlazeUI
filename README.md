@@ -1,2 +1,2 @@
 # Glaze
-GUI library for creating mobile apps written in Rust
+GUI library for creating mobile apps, written in Rust
