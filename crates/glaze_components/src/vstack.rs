@@ -36,8 +36,8 @@ impl VStack {
             id,
             element: NodeElement::VStack {
                 spacing: self.spacing,
+                children: self.children,
             },
-            children: self.children,
         }
     }
 }

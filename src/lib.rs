@@ -7,11 +7,14 @@ use glaze_core::{
 fn ui() {
     let text = text("Clicker".into()).size(20.0).id(2);
     let button = button("+1".into()).width(100.0).height(50.0).id(3);
-    let mut container = Node::new(4, glaze_core::NodeElement::Container);
-    container.push_child(text);
-    container.push_child(button);
-    let vstack = vstack().spacing(10.0).child(container).id(5);
-    println!("{:?}", vstack);
+    let vstack = vstack().spacing(10.0).child(text).child(button).id(5);
+    let container = Node::new(
+        4,
+        glaze_core::NodeElement::Container {
+            children: vec![vstack],
+        },
+    );
+    println!("{:?}", container);
 }
 
 fn app() {

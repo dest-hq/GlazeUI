@@ -5,24 +5,12 @@ pub struct Node {
 
     /// What type of UI element that is
     pub element: NodeElement,
-
-    /// Children (for containers)
-    pub children: Vec<Node>,
 }
 
 impl Node {
     /// Create a new node
     pub fn new(id: u64, element: NodeElement) -> Self {
-        Self {
-            id,
-            element,
-            children: Vec::new(),
-        }
-    }
-
-    /// Add a child
-    pub fn push_child(&mut self, child: Node) {
-        self.children.push(child);
+        Self { id, element }
     }
 }
 
@@ -30,7 +18,9 @@ impl Node {
 #[derive(Debug, Clone)]
 pub enum NodeElement {
     /// A box that holds other things
-    Container,
+    Container {
+        children: Vec<Node>,
+    },
 
     Text {
         content: String,
@@ -51,5 +41,6 @@ pub enum NodeElement {
     // Vertical List
     VStack {
         spacing: f32,
+        children: Vec<Node>,
     },
 }
