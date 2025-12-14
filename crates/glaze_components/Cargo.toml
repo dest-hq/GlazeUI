@@ -1,0 +1,8 @@
+[package]
+name = "glaze_components"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+glaze_core = { workspace = true }
