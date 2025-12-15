@@ -8,7 +8,7 @@ license = "Apache-2.0"
 members = [
   "crates/glaze_core",
   "crates/glaze_components"
-]
+, "crates/glaze_layout"]
 resolver = "2"
 
 [workspace.package]
@@ -19,7 +19,9 @@ license = "Apache-2.0"
 [workspace.dependencies]
 glaze_core = { path = "crates/glaze_core" }
 glaze_components = { path = "crates/glaze_components" }
+glaze_layout = { path = "crates/glaze_layout" }
 
 [dependencies]
 glaze_core = { path = "crates/glaze_core" }
 glaze_components = { path = "crates/glaze_components" }
+glaze_layout = { path = "crates/glaze_layout" }

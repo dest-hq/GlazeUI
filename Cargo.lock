@@ -105,6 +105,7 @@ version = "0.1.0"
 dependencies = [
  "glaze_components",
  "glaze_core",
+ "glaze_layout",
 ]
 
 [[package]]
@@ -120,6 +121,14 @@ dependencies = [
 name = "glaze_core"
 version = "0.1.0"
 dependencies = [
+ "taffy",
+]
+
+[[package]]
+name = "glaze_layout"
+version = "0.1.0"
+dependencies = [
+ "glaze_core",
  "taffy",
 ]
 

@@ -3,6 +3,7 @@ use glaze_core::{
     component::{App, Element},
     Node,
 };
+use glaze_layout::LayoutEngine;
 
 fn ui() {
     let text = text("Clicker".into())
@@ -17,7 +18,9 @@ fn ui() {
             children: vec![vstack],
         },
     );
-    println!("{:?}", container);
+
+    let mut layout = LayoutEngine::new();
+    layout.compute(&container, 800.0, 600.0);
 }
 
 fn app() {
