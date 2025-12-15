@@ -1,5 +1,5 @@
 use glaze_core::{Node, NodeElement};
-
+use taffy::{prelude::length, Style};
 // Helper to create vstack easier
 
 pub struct VStack {
@@ -32,12 +32,23 @@ impl VStack {
 
     // Transform in Node
     pub fn id(self, id: u64) -> Node {
-        Node {
+        let mut node = Node {
             id,
             element: NodeElement::VStack {
                 spacing: self.spacing,
                 children: self.children,
             },
-        }
+            style: Style::default(),
+        };
+        node.style = Style {
+            display: taffy::Display::Flex,
+            flex_direction: taffy::FlexDirection::Column,
+            gap: taffy::Size {
+                width: length(0.0),
+                height: length(self.spacing),
+            },
+            ..Default::default()
+        };
+        node
     }
 }

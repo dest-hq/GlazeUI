@@ -6,3 +6,5 @@ license.workspace = true
 
 [dependencies]
 glaze_core = { workspace = true }
+taffy = "0.9.2"
+cosmic-text = "0.15.0"

@@ -23,4 +23,3 @@ glaze_components = { path = "crates/glaze_components" }
 [dependencies]
 glaze_core = { path = "crates/glaze_core" }
 glaze_components = { path = "crates/glaze_components" }
-

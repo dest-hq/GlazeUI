@@ -1,3 +1,5 @@
+use taffy::Style;
+
 #[derive(Debug, Clone)]
 pub struct Node {
     /// Unique Id
@@ -5,12 +7,19 @@ pub struct Node {
 
     /// What type of UI element that is
     pub element: NodeElement,
+
+    // Style of element
+    pub style: Style,
 }
 
 impl Node {
     /// Create a new node
     pub fn new(id: u64, element: NodeElement) -> Self {
-        Self { id, element }
+        Self {
+            id,
+            element,
+            style: Style::default(),
+        }
     }
 }
 
@@ -24,7 +33,8 @@ pub enum NodeElement {
 
     Text {
         content: String,
-        size: f32,
+        font_size: f32,
+        line_height: f32,
     },
 
     Button {
