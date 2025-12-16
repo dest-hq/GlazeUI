@@ -38,7 +38,8 @@ impl LayoutEngine {
     fn build_taffy_tree(&mut self, node: &Node) -> NodeId {
         // Build children
         let child_ids: Vec<NodeId> = match &node.element {
-            NodeElement::Container { children } | NodeElement::VStack { children, .. } => children
+            NodeElement::Container { child, .. } => vec![self.build_taffy_tree(child)],
+            NodeElement::VStack { children, .. } | NodeElement::HStack { children, .. } => children
                 .iter()
                 .map(|child| self.build_taffy_tree(child))
                 .collect(),

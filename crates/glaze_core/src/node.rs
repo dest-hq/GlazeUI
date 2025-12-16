@@ -28,7 +28,9 @@ impl Node {
 pub enum NodeElement {
     /// A box that holds other things
     Container {
-        children: Vec<Node>,
+        child: Box<Node>,
+        width: f32,
+        height: f32,
     },
 
     Text {
@@ -50,6 +52,12 @@ pub enum NodeElement {
 
     // Vertical List
     VStack {
+        spacing: f32,
+        children: Vec<Node>,
+    },
+
+    // Horizontal List
+    HStack {
         spacing: f32,
         children: Vec<Node>,
     },

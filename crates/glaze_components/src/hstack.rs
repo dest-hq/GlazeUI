@@ -1,17 +1,18 @@
 use glaze_core::{Node, NodeElement};
 use taffy::{prelude::length, Style};
-// Helper to create vstack easier
 
-pub struct VStack {
+// Helper to create hstack easier
+
+pub struct HStack {
     children: Vec<Node>,
     spacing: f32,
 }
 
-pub fn vstack(children: &[Node]) -> VStack {
-    VStack::new(children.to_vec())
+pub fn hstack(children: &[Node]) -> HStack {
+    HStack::new(children.to_vec())
 }
 
-impl VStack {
+impl HStack {
     pub fn new(children: Vec<Node>) -> Self {
         Self {
             children,
@@ -28,7 +29,7 @@ impl VStack {
     pub fn id(self, id: u64) -> Node {
         let mut node = Node {
             id,
-            element: NodeElement::VStack {
+            element: NodeElement::HStack {
                 spacing: self.spacing,
                 children: self.children,
             },
@@ -36,10 +37,10 @@ impl VStack {
         };
         node.style = Style {
             display: taffy::Display::Flex,
-            flex_direction: taffy::FlexDirection::Column,
+            flex_direction: taffy::FlexDirection::Row,
             gap: taffy::Size {
-                width: length(0.0),
-                height: length(self.spacing),
+                width: length(self.spacing),
+                height: length(0.0),
             },
             ..Default::default()
         };

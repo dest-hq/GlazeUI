@@ -1,8 +1,7 @@
-use glaze_components::{button::button, text::text, vstack::vstack};
-use glaze_core::{
-    component::{App, Element},
-    Node,
+use glaze_components::{
+    button::button, container::container, hstack::hstack, text::text, vstack::vstack,
 };
+use glaze_core::component::{App, Element};
 use glaze_layout::LayoutEngine;
 
 fn ui() {
@@ -11,13 +10,11 @@ fn ui() {
         .line_height(16.0)
         .id(2);
     let button = button("+1".into()).width(100.0).height(50.0).id(3);
-    let vstack = vstack().spacing(10.0).child(text).child(button).id(5);
-    let container = Node::new(
-        4,
-        glaze_core::NodeElement::Container {
-            children: vec![vstack],
-        },
-    );
+    let vstack = vstack(&[text, button]).spacing(10.0).id(5);
+    let hstack = hstack(&[vstack.clone(), vstack.clone()])
+        .spacing(10.0)
+        .id(6);
+    let container = container(hstack).width(800.0).height(600.0).id(4);
 
     let mut layout = LayoutEngine::new();
     layout.compute(&container, 800.0, 600.0);
@@ -46,7 +43,7 @@ fn app() {
         fn view(&self) -> glaze_core::component::Element<Self::Message> {
             let text = text("Clicker".to_string()).font_size(20.0).id(1);
             let button = button("+1".to_string()).width(100.0).height(20.0).id(2);
-            let list = vstack().child(text).child(button).id(3);
+            let list = vstack(&[text, button]).id(3);
 
             Element::new(list)
         }
