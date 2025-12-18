@@ -1,5 +1,5 @@
 use glaze_core::{Node, NodeElement};
-use taffy::{prelude::length, Size, Style};
+use taffy::{Size, Style, prelude::length};
 
 // Helper to create button easier
 
@@ -32,10 +32,31 @@ impl Button {
         self
     }
 
-    // Transform in Node
-    pub fn id(self, id: u64) -> Node {
+    // Transform in Node without id
+    pub fn build(self) -> Node {
         let mut node = Node::new(
-            id,
+            None,
+            NodeElement::Button {
+                label: self.label,
+                width: self.width,
+                height: self.height,
+            },
+        );
+        node.style = Style {
+            size: Size {
+                width: length(self.width),
+                height: length(self.height),
+            },
+
+            ..Default::default()
+        };
+        node
+    }
+
+    // Transform in Node with id
+    pub fn build_with(self, id: u64) -> Node {
+        let mut node = Node::new(
+            Some(id),
             NodeElement::Button {
                 label: self.label,
                 width: self.width,

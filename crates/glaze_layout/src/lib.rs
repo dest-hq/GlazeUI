@@ -47,13 +47,15 @@ impl LayoutEngine {
         };
 
         // Create taffy node
-        let taffy_id = self
-            .taffy
-            .new_with_children(node.style.clone(), &child_ids)
-            .unwrap();
-
+        let taffy_id = if child_ids.is_empty() {
+            self.taffy.new_leaf(node.style.clone()).unwrap()
+        } else {
+            self.taffy
+                .new_with_children(node.style.clone(), &child_ids)
+                .unwrap()
+        };
         // Store mapping
-        self.node_map.insert(node.id, taffy_id);
+        self.node_map.insert(taffy_id.into(), taffy_id);
 
         taffy_id
     }

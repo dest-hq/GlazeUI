@@ -1,6 +1,6 @@
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics};
 use glaze_core::{Node, NodeElement};
-use taffy::{prelude::length, AvailableSpace, Size, Style};
+use taffy::{AvailableSpace, Size, Style, prelude::length};
 
 // Helper to create text easier
 
@@ -59,7 +59,7 @@ impl CosmicTextContext {
 pub struct Text {
     content: String,
     font_size: f32,
-    line_height: f32,
+    line_height: Option<f32>,
 }
 
 impl Text {
@@ -67,7 +67,7 @@ impl Text {
         Self {
             content,
             font_size: 14.0,
-            line_height: 16.0,
+            line_height: None,
         }
     }
 
@@ -77,15 +77,22 @@ impl Text {
     }
 
     pub fn line_height(mut self, line_height: f32) -> Self {
-        self.line_height = line_height;
+        self.line_height = Some(line_height);
         self
     }
 
-    // Transform in Node
-    pub fn id(self, id: u64) -> Node {
+    // Transform in Node with id
+    pub fn build_with(self, id: u64) -> Node {
+        // Get line height
+        let line_height = if self.line_height.is_none() {
+            self.font_size * 1.2
+        } else {
+            self.line_height.unwrap_or(16.0)
+        };
+
         let metrics = Metrics {
             font_size: self.font_size,
-            line_height: self.line_height,
+            line_height: line_height,
         };
         // Get system font
         let mut font_system = FontSystem::new();
@@ -106,11 +113,61 @@ impl Text {
         );
 
         let mut node = Node::new(
-            id,
+            Some(id),
             NodeElement::Text {
                 content: self.content,
                 font_size: self.font_size,
-                line_height: self.line_height,
+                line_height: line_height,
+            },
+        );
+
+        node.style = Style {
+            size: Size {
+                width: length(size.width),
+                height: length(size.height),
+            },
+            ..Default::default()
+        };
+        node
+    }
+
+    // Transform in Node without id
+    pub fn build(self) -> Node {
+        // Get line height
+        let line_height = if self.line_height.is_none() {
+            self.font_size * 1.2
+        } else {
+            self.line_height.unwrap_or(16.0)
+        };
+
+        let metrics = Metrics {
+            font_size: self.font_size,
+            line_height: line_height,
+        };
+        // Get system font
+        let mut font_system = FontSystem::new();
+
+        let mut ctx =
+            CosmicTextContext::new(metrics, &self.content, Attrs::new(), &mut font_system);
+
+        let size = ctx.measure(
+            Size {
+                width: None,
+                height: None,
+            },
+            Size {
+                width: AvailableSpace::MaxContent,
+                height: AvailableSpace::MaxContent,
+            },
+            &mut font_system,
+        );
+
+        let mut node = Node::new(
+            None,
+            NodeElement::Text {
+                content: self.content,
+                font_size: self.font_size,
+                line_height: line_height,
             },
         );
 

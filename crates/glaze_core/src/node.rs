@@ -3,7 +3,7 @@ use taffy::Style;
 #[derive(Debug, Clone)]
 pub struct Node {
     /// Unique Id
-    pub id: u64,
+    pub id: Option<u64>,
 
     /// What type of UI element that is
     pub element: NodeElement,
@@ -14,9 +14,9 @@ pub struct Node {
 
 impl Node {
     /// Create a new node
-    pub fn new(id: u64, element: NodeElement) -> Self {
+    pub fn new(id: Option<u64>, element: NodeElement) -> Self {
         Self {
-            id,
+            id: id,
             element,
             style: Style::default(),
         }
@@ -48,6 +48,7 @@ pub enum NodeElement {
     /// Empty space
     Spacer {
         height: f32,
+        width: f32,
     },
 
     // Vertical List

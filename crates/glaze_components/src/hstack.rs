@@ -1,5 +1,5 @@
 use glaze_core::{Node, NodeElement};
-use taffy::{prelude::length, Style};
+use taffy::{Style, prelude::length};
 
 // Helper to create hstack easier
 
@@ -25,10 +25,32 @@ impl HStack {
         self
     }
 
-    // Transform in Node
-    pub fn id(self, id: u64) -> Node {
+    // Transform in Node with id
+    pub fn build_with(self, id: u64) -> Node {
         let mut node = Node {
-            id,
+            id: Some(id),
+            element: NodeElement::HStack {
+                spacing: self.spacing,
+                children: self.children,
+            },
+            style: Style::default(),
+        };
+        node.style = Style {
+            display: taffy::Display::Flex,
+            flex_direction: taffy::FlexDirection::Row,
+            gap: taffy::Size {
+                width: length(self.spacing),
+                height: length(0.0),
+            },
+            ..Default::default()
+        };
+        node
+    }
+
+    // Transform in Node without id
+    pub fn build(self) -> Node {
+        let mut node = Node {
+            id: None,
             element: NodeElement::HStack {
                 spacing: self.spacing,
                 children: self.children,
