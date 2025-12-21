@@ -1,6 +1,6 @@
 <div align="center">
   
-# Glaze
+# GlazeUI
 
 GUI library for creating mobile apps, written in Rust
 
