@@ -1,4 +1,4 @@
-use glaze_core::{Node, NodeElement};
+use glazeui_core::{Node, NodeElement};
 use taffy::{Size, Style, prelude::length};
 
 // Helper to create container easier

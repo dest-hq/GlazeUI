@@ -1,5 +1,5 @@
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics};
-use glaze_core::{Node, NodeElement};
+use glazeui_core::{Node, NodeElement};
 use taffy::{AvailableSpace, Size, Style, prelude::length};
 
 // Helper to create text easier
@@ -60,6 +60,7 @@ pub struct Text {
     content: String,
     font_size: f32,
     line_height: Option<f32>,
+    bold: bool,
 }
 
 impl Text {
@@ -68,11 +69,17 @@ impl Text {
             content,
             font_size: 14.0,
             line_height: None,
+            bold: false,
         }
     }
 
     pub fn font_size(mut self, font_size: f32) -> Self {
         self.font_size = font_size;
+        self
+    }
+
+    pub fn bold(mut self, bold: bool) -> Self {
+        self.bold = bold;
         self
     }
 

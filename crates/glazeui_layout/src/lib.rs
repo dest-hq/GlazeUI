@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use glaze_core::{Node, NodeElement};
+use glazeui_core::{Node, NodeElement};
 use taffy::{NodeId, TaffyTree};
 
 pub struct LayoutEngine {

@@ -1,18 +1,14 @@
-use glaze_core::{Node, NodeElement};
+use glazeui_core::{Node, NodeElement};
 use taffy::{Style, prelude::length};
+// Helper to create vstack easier
 
-// Helper to create hstack easier
-
-pub struct HStack {
+#[derive(Debug)]
+pub struct VStack {
     children: Vec<Node>,
     spacing: f32,
 }
 
-pub fn hstack(children: &[Node]) -> HStack {
-    HStack::new(children.to_vec())
-}
-
-impl HStack {
+impl VStack {
     pub fn new(children: Vec<Node>) -> Self {
         Self {
             children,
@@ -29,7 +25,7 @@ impl HStack {
     pub fn build_with(self, id: u64) -> Node {
         let mut node = Node {
             id: Some(id),
-            element: NodeElement::HStack {
+            element: NodeElement::VStack {
                 spacing: self.spacing,
                 children: self.children,
             },
@@ -37,10 +33,10 @@ impl HStack {
         };
         node.style = Style {
             display: taffy::Display::Flex,
-            flex_direction: taffy::FlexDirection::Row,
+            flex_direction: taffy::FlexDirection::Column,
             gap: taffy::Size {
-                width: length(self.spacing),
-                height: length(0.0),
+                width: length(0.0),
+                height: length(self.spacing),
             },
             ..Default::default()
         };
@@ -51,7 +47,7 @@ impl HStack {
     pub fn build(self) -> Node {
         let mut node = Node {
             id: None,
-            element: NodeElement::HStack {
+            element: NodeElement::VStack {
                 spacing: self.spacing,
                 children: self.children,
             },
@@ -59,13 +55,21 @@ impl HStack {
         };
         node.style = Style {
             display: taffy::Display::Flex,
-            flex_direction: taffy::FlexDirection::Row,
+            flex_direction: taffy::FlexDirection::Column,
             gap: taffy::Size {
-                width: length(self.spacing),
-                height: length(0.0),
+                width: length(0.0),
+                height: length(self.spacing),
             },
             ..Default::default()
         };
         node
     }
+}
+
+#[macro_export]
+macro_rules! vstack {
+    ($($child:expr),*) => {{
+        let children = vec![$($child),*];
+        $crate::vstack::VStack::new(children)
+    }};
 }
