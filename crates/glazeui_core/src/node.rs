@@ -1,9 +1,23 @@
 use taffy::Style;
 
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone)]
+pub enum TextWeight {
+    THIN,        // 100
+    EXTRA_LIGHT, // 200
+    LIGHT,       // 300
+    NORMAL,      // 400,
+    MEDIUM,      // 500
+    SEMIBOLD,    // 600
+    BOLD,        // 700
+    EXTRA_BOLD,  // 800
+    BLACK,       // 900
+}
+
 #[derive(Debug, Clone)]
 pub struct Node {
     /// Unique Id
-    pub id: Option<u64>,
+    pub id: u64,
 
     /// What type of UI element that is
     pub element: NodeElement,
@@ -14,7 +28,7 @@ pub struct Node {
 
 impl Node {
     /// Create a new node
-    pub fn new(id: Option<u64>, element: NodeElement) -> Self {
+    pub fn new(id: u64, element: NodeElement) -> Self {
         Self {
             id: id,
             element,
@@ -37,6 +51,7 @@ pub enum NodeElement {
         content: String,
         font_size: f32,
         line_height: f32,
+        weight: TextWeight,
     },
 
     Button {

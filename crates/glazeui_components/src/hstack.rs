@@ -1,6 +1,8 @@
 use glazeui_core::{Node, NodeElement};
 use taffy::{Style, prelude::length};
 
+use crate::ui_id::{next_id, sync_with};
+
 // Helper to create hstack easier
 
 pub struct HStack {
@@ -27,8 +29,9 @@ impl HStack {
 
     // Transform in Node with id
     pub fn build_with(self, id: u64) -> Node {
+        sync_with(id + 1);
         let mut node = Node {
-            id: Some(id),
+            id: id,
             element: NodeElement::HStack {
                 spacing: self.spacing,
                 children: self.children,
@@ -50,7 +53,7 @@ impl HStack {
     // Transform in Node without id
     pub fn build(self) -> Node {
         let mut node = Node {
-            id: None,
+            id: next_id(),
             element: NodeElement::HStack {
                 spacing: self.spacing,
                 children: self.children,

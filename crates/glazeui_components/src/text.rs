@@ -1,8 +1,12 @@
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics};
-use glazeui_core::{Node, NodeElement};
+use glazeui_core::{Node, NodeElement, node::TextWeight};
 use taffy::{AvailableSpace, Size, Style, prelude::length};
 
+use crate::ui_id::{next_id, sync_with};
+
 // Helper to create text easier
+
+// Need to make meature with text weight, if the text weight is bold, measure think is normal
 
 pub fn text(content: String) -> Text {
     Text::new(content)
@@ -59,43 +63,32 @@ impl CosmicTextContext {
 pub struct Text {
     content: String,
     font_size: f32,
-    line_height: Option<f32>,
-    bold: bool,
+    weight: TextWeight,
 }
 
 impl Text {
     pub fn new(content: String) -> Self {
         Self {
-            content,
+            content: content,
             font_size: 14.0,
-            line_height: None,
-            bold: false,
+            weight: TextWeight::NORMAL,
         }
     }
 
-    pub fn font_size(mut self, font_size: f32) -> Self {
+    pub fn size(mut self, font_size: f32) -> Self {
         self.font_size = font_size;
         self
     }
 
-    pub fn bold(mut self, bold: bool) -> Self {
-        self.bold = bold;
-        self
-    }
-
-    pub fn line_height(mut self, line_height: f32) -> Self {
-        self.line_height = Some(line_height);
+    pub fn weight(mut self, weight: TextWeight) -> Self {
+        self.weight = weight;
         self
     }
 
     // Transform in Node with id
     pub fn build_with(self, id: u64) -> Node {
         // Get line height
-        let line_height = if self.line_height.is_none() {
-            self.font_size * 1.2
-        } else {
-            self.line_height.unwrap_or(16.0)
-        };
+        let line_height = self.font_size * 1.2;
 
         let metrics = Metrics {
             font_size: self.font_size,
@@ -118,13 +111,14 @@ impl Text {
             },
             &mut font_system,
         );
-
+        sync_with(id + 1);
         let mut node = Node::new(
-            Some(id),
+            id,
             NodeElement::Text {
                 content: self.content,
                 font_size: self.font_size,
                 line_height: line_height,
+                weight: self.weight,
             },
         );
 
@@ -141,11 +135,7 @@ impl Text {
     // Transform in Node without id
     pub fn build(self) -> Node {
         // Get line height
-        let line_height = if self.line_height.is_none() {
-            self.font_size * 1.2
-        } else {
-            self.line_height.unwrap_or(16.0)
-        };
+        let line_height = self.font_size * 1.2;
 
         let metrics = Metrics {
             font_size: self.font_size,
@@ -168,13 +158,15 @@ impl Text {
             },
             &mut font_system,
         );
-
+        let id = next_id();
+        sync_with(id + 1);
         let mut node = Node::new(
-            None,
+            id,
             NodeElement::Text {
                 content: self.content,
                 font_size: self.font_size,
                 line_height: line_height,
+                weight: self.weight,
             },
         );
 

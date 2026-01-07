@@ -1,6 +1,8 @@
 use glazeui_core::{Node, NodeElement};
 use taffy::{Size, Style, prelude::length};
 
+use crate::ui_id::next_id;
+
 // Helper to create spacer easier
 
 pub struct Spacer {
@@ -33,7 +35,7 @@ impl Spacer {
     // Transform in Node
     pub fn build(self) -> Node {
         let mut node = Node {
-            id: None,
+            id: next_id(),
             element: NodeElement::Spacer {
                 width: self.width,
                 height: self.height,

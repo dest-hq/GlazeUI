@@ -6,8 +6,10 @@ license.workspace = true
 
 [dependencies]
 glazeui_core = { workspace = true }
+glazeui_layout = { workspace = true }
 wgpu = { workspace = true }
 winit = { workspace = true }
 pollster = { workspace = true }
 glyphon = "0.10.0"
 cosmic-text = "0.15.0"
+taffy = { workspace = true }

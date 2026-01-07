@@ -1,6 +1,8 @@
 use glazeui_core::{Node, NodeElement};
 use taffy::{Size, Style, prelude::length};
 
+use crate::ui_id::{next_id, sync_with};
+
 // Helper to create container easier
 
 pub fn container(child: Node) -> Container {
@@ -34,8 +36,9 @@ impl Container {
 
     // Transform in Node with id
     pub fn build_with(self, id: u64) -> Node {
+        sync_with(id + 1);
         let mut node = Node::new(
-            Some(id),
+            id,
             NodeElement::Container {
                 child: Box::new(self.child),
                 width: self.width,
@@ -56,7 +59,7 @@ impl Container {
     // Transform in Node without id
     pub fn build(self) -> Node {
         let mut node = Node::new(
-            None,
+            next_id(),
             NodeElement::Container {
                 child: Box::new(self.child),
                 width: self.width,

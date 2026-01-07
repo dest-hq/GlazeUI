@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
+use glazeui_components::{hstack, text::text, ui_id::clear_counter, vstack};
 use glazeui_core::component::App;
+use glazeui_core::node::TextWeight;
+use glazeui_layout::LayoutEngine;
 use glazeui_renderer::wgpu_ctx::WgpuCtx;
-use wgpu::Color;
 use winit::{
     application::ApplicationHandler,
-    event::{ElementState, WindowEvent},
+    dpi::PhysicalPosition,
+    event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::Key,
     platform::modifier_supplement::KeyEventExtModifierSupplement,
@@ -31,6 +34,7 @@ struct UserWindow<'window> {
     wgpu_ctx: Option<WgpuCtx<'window>>,
     window_settings: WindowAttributes,
     count: i32,
+    position: PhysicalPosition<f64>,
 }
 
 impl<'window> ApplicationHandler for UserWindow<'window> {
@@ -76,9 +80,39 @@ impl<'window> ApplicationHandler for UserWindow<'window> {
                 }
             }
             WindowEvent::RedrawRequested => {
-                if let Some(wgpu_ctx) = self.wgpu_ctx.as_mut() {
-                    wgpu_ctx.draw(&self.count.to_string());
+                if let (Some(wgpu_ctx), Some(window)) =
+                    (self.wgpu_ctx.as_mut(), self.window.as_ref())
+                {
+                    clear_counter();
+                    let size = window.inner_size();
+
+                    let mut layout = LayoutEngine::new();
+                    let text2 = text("Salut Mama".to_string())
+                        .size(30.0)
+                        .weight(TextWeight::THIN)
+                        .build();
+                    let text1 = text("Adina loh".to_string()).size(20.0).build();
+                    let vstack = vstack![text1, text2].spacing(20.0).build();
+                    layout.compute(&vstack, size.width as f32, size.height as f32);
+                    wgpu_ctx.draw(&vstack, &layout);
                 }
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                if button == MouseButton::Left && state == ElementState::Pressed {
+                    if let Some(window) = self.window.as_ref() {
+                        let py = (1.0 - (-0.5)) * 0.5 * window.inner_size().height as f32;
+                        let px = (-0.1 + 1.0) * 0.5 * window.inner_size().width as f32;
+                        if self.position.x == px as f64 && self.position.y == py as f64 {
+                            self.count = self.count + 1;
+                            if let Some(window) = self.window.as_ref() {
+                                window.request_redraw();
+                            }
+                        }
+                    }
+                }
+            }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.position = position;
             }
             _ => (),
         }

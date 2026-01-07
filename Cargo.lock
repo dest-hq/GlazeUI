@@ -609,8 +609,10 @@ version = "0.0.1"
 dependencies = [
  "cosmic-text",
  "glazeui_core",
+ "glazeui_layout",
  "glyphon",
  "pollster",
+ "taffy",
  "wgpu",
  "winit",
 ]
