@@ -13,6 +13,8 @@ pub struct Container {
     child: Node,
     width: f32,
     height: f32,
+    color: (u8, u8, u8, u8),
+    radius: f32,
 }
 
 impl Container {
@@ -21,16 +23,23 @@ impl Container {
             child,
             width: 100.0,
             height: 50.0,
+            color: (255, 255, 255, 255),
+            radius: 0.0,
         }
     }
 
-    pub fn width(mut self, width: f32) -> Self {
+    pub fn size(mut self, width: f32, height: f32) -> Self {
         self.width = width;
+        self.height = height;
         self
     }
 
-    pub fn height(mut self, height: f32) -> Self {
-        self.height = height;
+    pub fn color(mut self, r: u8, g: u8, b: u8, a: u8) -> Self {
+        self.color = (r, g, b, a);
+        self
+    }
+    pub fn radius(mut self, corner_radius: f32) -> Self {
+        self.radius = corner_radius;
         self
     }
 
@@ -43,6 +52,8 @@ impl Container {
                 child: Box::new(self.child),
                 width: self.width,
                 height: self.height,
+                color: self.color,
+                radius: self.radius,
             },
         );
         node.style = Style {
@@ -64,6 +75,8 @@ impl Container {
                 child: Box::new(self.child),
                 width: self.width,
                 height: self.height,
+                radius: self.radius,
+                color: self.color,
             },
         );
         node.style = Style {

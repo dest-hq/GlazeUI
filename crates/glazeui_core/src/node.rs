@@ -45,6 +45,8 @@ pub enum NodeElement {
         child: Box<Node>,
         width: f32,
         height: f32,
+        color: (u8, u8, u8, u8),
+        radius: f32,
     },
 
     Text {

@@ -1,5 +1,6 @@
 use std::{borrow::Cow, sync::Arc};
 
+use glazeui_canvas::{Area, Atlas, Canvas, Color as canvasColor, Item, Renderer, Shape, ShapeType};
 use glazeui_core::{Node, NodeElement, node::TextWeight};
 use glazeui_layout::LayoutEngine;
 use glyphon::{
@@ -15,7 +16,7 @@ pub struct WgpuCtx<'window> {
     adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    render_pipeline: wgpu::RenderPipeline,
+    // render_pipeline: wgpu::RenderPipeline,
     font_system: FontSystem,
     swash_cache: SwashCache,
     viewport: glyphon::Viewport,
@@ -54,11 +55,6 @@ impl<'window> WgpuCtx<'window> {
             .await
             .expect("Failed to create device");
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: None,
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
-        });
-
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],
@@ -68,27 +64,27 @@ impl<'window> WgpuCtx<'window> {
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let swapchain_format = swapchain_capabilities.formats[0];
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &[Some(swapchain_format.into())],
-            }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            cache: None,
-            multiview_mask: None,
-            multisample: wgpu::MultisampleState::default(),
-        });
+        // let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        //     label: None,
+        //     layout: Some(&pipeline_layout),
+        //     vertex: wgpu::VertexState {
+        //         module: &shader,
+        //         entry_point: Some("vs_main"),
+        //         compilation_options: Default::default(),
+        //         buffers: &[],
+        //     },
+        //     fragment: Some(wgpu::FragmentState {
+        //         module: &shader,
+        //         entry_point: Some("fs_main"),
+        //         compilation_options: Default::default(),
+        //         targets: &[Some(swapchain_format.into())],
+        //     }),
+        //     primitive: wgpu::PrimitiveState::default(),
+        //     depth_stencil: None,
+        //     cache: None,
+        //     multiview_mask: None,
+        //     multisample: wgpu::MultisampleState::default(),
+        // });
 
         let size = window.inner_size();
         let surface_config = surface
@@ -111,7 +107,7 @@ impl<'window> WgpuCtx<'window> {
             adapter,
             device,
             queue,
-            render_pipeline,
+            // render_pipeline,
             font_system,
             swash_cache,
             viewport: viewport,
@@ -170,9 +166,6 @@ impl<'window> WgpuCtx<'window> {
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
-
-            _r_pass.set_pipeline(&self.render_pipeline);
-            _r_pass.draw(0..10, 0..1);
         }
 
         // Render UI
@@ -293,6 +286,70 @@ impl<'window> WgpuCtx<'window> {
         if let NodeElement::HStack { children, .. } = &node.element {
             for child in children.iter() {
                 self.draw_node(child, layout, encoder, texture_view);
+            }
+        }
+
+        if let NodeElement::Container {
+            child,
+            width,
+            height,
+            color,
+            radius,
+        } = &node.element
+        {
+            let mut renderer = Renderer::new(
+                &self.device,
+                &self.surface_config.format,
+                wgpu::MultisampleState::default(),
+                None,
+            );
+            let layout = layout.layouts.get(&node.id).unwrap();
+            let mut items = Vec::new();
+            let mut atlas = Atlas::default();
+            let (r, g, b, a) = color;
+            let radius = radius.min(width * 0.5).min(height * 0.5);
+            items.push((
+                Area {
+                    offset: (layout.x, layout.y),
+                    bounds: None,
+                },
+                Item::Shape(Shape {
+                    shape: ShapeType::RoundedRectangle(
+                        0.0,
+                        (*width, *height),
+                        0.0, // This is responsible for setting how much it is flipped
+                        radius,
+                    ),
+                    color: canvasColor(*r, *g, *b, *a),
+                }),
+            ));
+            renderer.prepare(
+                &self.device,
+                &self.queue,
+                self.surface_config.width as f32,
+                self.surface_config.height as f32,
+                &mut atlas,
+                items,
+            );
+
+            {
+                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("text_pass"),
+                    multiview_mask: None,
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &texture_view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
+                renderer.render(&mut render_pass);
             }
         }
     }

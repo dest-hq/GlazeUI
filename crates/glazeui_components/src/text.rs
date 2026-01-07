@@ -6,10 +6,8 @@ use crate::ui_id::{next_id, sync_with};
 
 // Helper to create text easier
 
-// Need to make meature with text weight, if the text weight is bold, measure think is normal
-
-pub fn text(content: String) -> Text {
-    Text::new(content)
+pub fn text(content: &str) -> Text {
+    Text::new(content.to_string())
 }
 
 struct CosmicTextContext {
@@ -64,6 +62,7 @@ pub struct Text {
     content: String,
     font_size: f32,
     weight: TextWeight,
+    id: Option<u64>,
 }
 
 impl Text {
@@ -72,6 +71,7 @@ impl Text {
             content: content,
             font_size: 14.0,
             weight: TextWeight::NORMAL,
+            id: None,
         }
     }
 
@@ -85,67 +85,44 @@ impl Text {
         self
     }
 
-    // Transform in Node with id
-    pub fn build_with(self, id: u64) -> Node {
-        // Get line height
-        let line_height = self.font_size * 1.2;
-
-        let metrics = Metrics {
-            font_size: self.font_size,
-            line_height: line_height,
-        };
-        // Get system font
-        let mut font_system = FontSystem::new();
-
-        let mut ctx =
-            CosmicTextContext::new(metrics, &self.content, Attrs::new(), &mut font_system);
-
-        let size = ctx.measure(
-            Size {
-                width: None,
-                height: None,
-            },
-            Size {
-                width: AvailableSpace::MaxContent,
-                height: AvailableSpace::MaxContent,
-            },
-            &mut font_system,
-        );
-        sync_with(id + 1);
-        let mut node = Node::new(
-            id,
-            NodeElement::Text {
-                content: self.content,
-                font_size: self.font_size,
-                line_height: line_height,
-                weight: self.weight,
-            },
-        );
-
-        node.style = Style {
-            size: Size {
-                width: length(size.width),
-                height: length(size.height),
-            },
-            ..Default::default()
-        };
-        node
+    pub fn id(mut self, id: u64) -> Self {
+        self.id = Some(id);
+        self
     }
+}
 
-    // Transform in Node without id
-    pub fn build(self) -> Node {
+// Transform in Node
+impl From<Text> for Node {
+    fn from(builder: Text) -> Node {
+        // Get text weight
+        let weight = match builder.weight {
+            TextWeight::THIN => 100,
+            TextWeight::EXTRA_LIGHT => 200,
+            TextWeight::LIGHT => 300,
+            TextWeight::NORMAL => 400,
+            TextWeight::MEDIUM => 500,
+            TextWeight::SEMIBOLD => 600,
+            TextWeight::BOLD => 700,
+            TextWeight::EXTRA_BOLD => 800,
+            TextWeight::BLACK => 900,
+        };
+
         // Get line height
-        let line_height = self.font_size * 1.2;
+        let line_height = builder.font_size * 1.3;
 
         let metrics = Metrics {
-            font_size: self.font_size,
+            font_size: builder.font_size,
             line_height: line_height,
         };
         // Get system font
         let mut font_system = FontSystem::new();
 
-        let mut ctx =
-            CosmicTextContext::new(metrics, &self.content, Attrs::new(), &mut font_system);
+        let mut ctx = CosmicTextContext::new(
+            metrics,
+            &builder.content,
+            Attrs::new().weight(cosmic_text::Weight(weight)),
+            &mut font_system,
+        );
 
         let size = ctx.measure(
             Size {
@@ -158,15 +135,16 @@ impl Text {
             },
             &mut font_system,
         );
-        let id = next_id();
+        // Get id
+        let id = builder.id.unwrap_or(next_id());
         sync_with(id + 1);
         let mut node = Node::new(
             id,
             NodeElement::Text {
-                content: self.content,
-                font_size: self.font_size,
+                content: builder.content,
+                font_size: builder.font_size,
                 line_height: line_height,
-                weight: self.weight,
+                weight: builder.weight,
             },
         );
 

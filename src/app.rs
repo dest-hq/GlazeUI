@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use glazeui_components::{hstack, text::text, ui_id::clear_counter, vstack};
-use glazeui_core::component::App;
+use glazeui_components::container::container;
+use glazeui_components::hstack::hstack;
+use glazeui_components::{hstack, spacer::spacer, text::text, ui_id::clear_counter, vstack};
 use glazeui_core::node::TextWeight;
+use glazeui_core::{Node, component::App};
 use glazeui_layout::LayoutEngine;
 use glazeui_renderer::wgpu_ctx::WgpuCtx;
 use winit::{
@@ -87,14 +89,45 @@ impl<'window> ApplicationHandler for UserWindow<'window> {
                     let size = window.inner_size();
 
                     let mut layout = LayoutEngine::new();
-                    let text2 = text("Salut Mama".to_string())
-                        .size(30.0)
-                        .weight(TextWeight::THIN)
+                    let text1 = text("Care patratel are culoarea albastra? 🤔")
+                        .size(35.0)
+                        .weight(TextWeight::MEDIUM)
+                        .into();
+                    let rectangle = container(spacer().build())
+                        .color(155, 252, 0, 255)
+                        .size(100.0, 100.0)
+                        .radius(15.0)
                         .build();
-                    let text1 = text("Adina loh".to_string()).size(20.0).build();
-                    let vstack = vstack![text1, text2].spacing(20.0).build();
-                    layout.compute(&vstack, size.width as f32, size.height as f32);
-                    wgpu_ctx.draw(&vstack, &layout);
+                    let rectangle2 = container(spacer().build())
+                        .color(219, 48, 39, 255)
+                        .size(100.0, 100.0)
+                        .radius(15.0)
+                        .build();
+                    let rectangle3 = container(spacer().build())
+                        .color(219, 38, 177, 255)
+                        .size(100.0, 100.0)
+                        .radius(15.0)
+                        .build();
+                    let rectangle4 = container(spacer().build())
+                        .color(26, 36, 224, 255)
+                        .size(100.0, 100.0)
+                        .radius(15.0)
+                        .build();
+                    let vstack1 = vstack!(spacer().width(30.0).build(), rectangle, rectangle4)
+                        .spacing(20.0)
+                        .build();
+                    let vstack2 = vstack!(spacer().width(30.0).build(), rectangle2, rectangle3)
+                        .spacing(20.0)
+                        .build();
+                    let hstack1 = hstack!(spacer().width(30.0).build(), vstack1, vstack2)
+                        .spacing(20.0)
+                        .build();
+                    let hstack2 = hstack!(spacer().width(50.0).build(), text1).build();
+                    let vstack3 = vstack!(spacer().width(30.0).build(), hstack2, hstack1)
+                        .spacing(20.0)
+                        .build();
+                    layout.compute(&vstack3, size.width as f32, size.height as f32);
+                    wgpu_ctx.draw(&vstack3, &layout);
                 }
             }
             WindowEvent::MouseInput { state, button, .. } => {
