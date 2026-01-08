@@ -1,9 +1,0 @@
-[package]
-name = "glazeui_layout"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-
-[dependencies]
-taffy = { workspace = true }
-glazeui_core = { workspace = true }
