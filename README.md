@@ -16,5 +16,5 @@ Inspired by [Iced](https://github.com/iced-rs/iced)
 - **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [wgpu](https://github.com/gfx-rs/wgpu)
 - Easy to use
 
-[Roadmap](https://github.com/dest-hq/glazeui/blob/main/roadmap.md)
+[Roadmap](https://github.com/dest-hq/glazeui/blob/main/ROADMAP.md)
 
