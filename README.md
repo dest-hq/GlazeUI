@@ -7,6 +7,8 @@
 
 Cross-platform GUI library, written in Rust
 
+[Roadmap](https://github.com/dest-hq/glazeui/tree/roadmap.md)
+
 </div>
 
 ## Features
