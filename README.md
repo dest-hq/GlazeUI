@@ -7,3 +7,13 @@
 
 Cross-platform GUI library, written in Rust
 
+</div>
+
+## Features
+
+Inspired by [Iced](https://github.com/iced-rs/iced)
+- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [wgpu](https://github.com/gfx-rs/wgpu)
+- Easy to use
+
+
+
