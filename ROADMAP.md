@@ -7,7 +7,16 @@ v0.0.2
 v0.0.3
 - [ ] - Add essential functions for widgets, such as align, padding, etc.
 
-v0.1
-- [ ] - Make more widgets (image widget, button widget, panel widget, text input widget, etc.)
+v0.1.0
 - [ ] - Gradient support
+- [ ] - Clipping
+
+v0.1.1
 - [ ] - Custom fonts
+- [ ] Font fallback
+- [ ] Font cache API
+
+v0.1.2
+- [ ] API for custom widgets
+- [ ] Stable widget trait
+- [ ] Documentation
