@@ -1,10 +1,10 @@
 v0.1.0
 - [x] - Make rendering via wgpu and make a working Elm architecture
       
-v0.1.2
+v0.1.1
 - [ ] - Optimize GlazeUI, currently during redraw, layout via taffy recompiles every time and for each text widget, a font is created, which leads to lag (to fix this, need to create the font only once and then use it)
 
-v0.1.3
+v0.1.2
 - [ ] - Add essential functions for widgets, such as align, padding, etc.
 
 v0.2.0
