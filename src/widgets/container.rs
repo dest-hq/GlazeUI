@@ -1,31 +1,32 @@
-use crate::core::node::{Node, NodeElement};
+use std::marker::PhantomData;
+
+use crate::core::node::{NodeElement, Widget};
 use taffy::{Rect, Size, Style, prelude::length};
 
-use crate::widgets::utils::{
-    types::Padding,
-    ui_id::{next_id, sync_with},
-};
+use crate::widgets::utils::{types::Padding, ui_id::next_id};
 
 // Helper to create container easier
 
 #[allow(dead_code)]
-pub fn container(child: Node) -> Container {
+pub fn container<Message>(child: Widget<Message>) -> Container<Message> {
     Container::new(child)
 }
-
-pub struct Container {
-    child: Node,
+pub struct Container<Message> {
+    _marker: PhantomData<Message>,
+    child: Widget<Message>,
     width: f32,
     height: f32,
     color: (u8, u8, u8, u8),
     radius: f32,
     padding: Padding,
     id: Option<u64>,
+    on_click: Option<Message>,
 }
 
-impl Container {
-    pub fn new(child: Node) -> Self {
+impl<Message> Container<Message> {
+    pub fn new(child: Widget<Message>) -> Self {
         Self {
+            _marker: PhantomData,
             child,
             width: 100.0,
             height: 50.0,
@@ -38,6 +39,7 @@ impl Container {
                 bottom: 0.0,
             },
             id: None,
+            on_click: None,
         }
     }
 
@@ -51,10 +53,19 @@ impl Container {
         self.color = (r, g, b, a);
         self
     }
-    pub fn id(mut self, id: u64) -> Self {
+
+    pub fn id(mut self, mut id: u64) -> Self {
+        if id < 1000 {
+            id = 1000 + id;
+            println!(
+                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+                id
+            );
+        }
         self.id = Some(id);
         self
     }
+
     pub fn radius(mut self, corner_radius: f32) -> Self {
         self.radius = corner_radius;
         self
@@ -64,13 +75,17 @@ impl Container {
         self.padding = padding;
         self
     }
+    pub fn on_click(mut self, message: Message) -> Self {
+        self.on_click = Some(message);
+        self
+    }
 }
 
-// Transform in Node
-impl From<Container> for Node {
-    fn from(builder: Container) -> Node {
+// Transform in Widget
+impl<Message> From<Container<Message>> for Widget<Message> {
+    fn from(builder: Container<Message>) -> Widget<Message> {
         let id = builder.id.unwrap_or(next_id());
-        let mut node = Node::new(
+        let mut widget = Widget::new(
             id,
             NodeElement::Container {
                 child: Box::new(builder.child),
@@ -79,8 +94,9 @@ impl From<Container> for Node {
                 color: builder.color,
                 radius: builder.radius,
             },
+            builder.on_click,
         );
-        node.style = Style {
+        widget.style = Style {
             size: Size {
                 width: length(builder.width),
                 height: length(builder.height),
@@ -93,6 +109,6 @@ impl From<Container> for Node {
             },
             ..Default::default()
         };
-        node
+        widget
     }
 }

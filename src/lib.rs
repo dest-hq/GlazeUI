@@ -12,10 +12,10 @@ use winit::{
     dpi::PhysicalPosition,
     event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
-    keyboard::Key,
-    platform::modifier_supplement::KeyEventExtModifierSupplement,
     window::{Window, WindowAttributes, WindowId},
 };
+
+use crate::{core::node::NodeElement, layout::ResolvedLayout};
 
 // Function to run the app
 pub fn run<A: App>(_app: A, window_settings: WindowAttributes) {
@@ -28,6 +28,7 @@ pub fn run<A: App>(_app: A, window_settings: WindowAttributes) {
         app: _app,
         window: None,
         wgpu_ctx: None,
+        layout: None,
         position: PhysicalPosition::new(0.0, 0.0),
     };
     let _ = event_loop.run_app(&mut window);
@@ -35,10 +36,11 @@ pub fn run<A: App>(_app: A, window_settings: WindowAttributes) {
 #[derive(Default)]
 struct UserWindow<'window, A: App> {
     window: Option<Arc<Window>>,
-    wgpu_ctx: Option<WgpuCtx<'window>>,
+    wgpu_ctx: Option<WgpuCtx<'window, A::Message>>,
     window_settings: WindowAttributes,
     app: A,
     position: PhysicalPosition<f64>,
+    layout: Option<LayoutEngine<A::Message>>,
 }
 
 impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
@@ -61,18 +63,6 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-            WindowEvent::KeyboardInput { event, .. } => {
-                if event.state == ElementState::Pressed && !event.repeat {
-                    match event.key_without_modifiers().as_ref() {
-                        Key::Named(winit::keyboard::NamedKey::Space) => {
-                            if let Some(window) = self.window.as_ref() {
-                                window.request_redraw();
-                            }
-                        }
-                        _ => (),
-                    }
-                }
-            }
             WindowEvent::Resized(new_size) => {
                 if let (Some(wgpu_ctx), Some(window)) =
                     (self.wgpu_ctx.as_mut(), self.window.as_ref())
@@ -88,20 +78,43 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                     clear_counter();
                     let size = window.inner_size();
 
-                    let mut layout = LayoutEngine::new();
-                    let element = self.app.view().node;
-                    layout.compute(&element, size.width as f32, size.height as f32);
-                    wgpu_ctx.draw(&element, &layout);
+                    let mut layout: LayoutEngine<<A as App>::Message> = LayoutEngine::new();
+                    let element = self.app.view();
+                    layout.compute(&element.widget, size.width as f32, size.height as f32);
+                    wgpu_ctx.draw(&element.widget, &layout);
+                    self.layout = Some(layout);
                 }
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
                     if let Some(window) = self.window.as_ref() {
-                        let py = (1.0 - (-0.5)) * 0.5 * window.inner_size().height as f32;
-                        let px = (-0.1 + 1.0) * 0.5 * window.inner_size().width as f32;
-                        if self.position.x == px as f64 && self.position.y == py as f64 {
-                            if let Some(window) = self.window.as_ref() {
-                                window.request_redraw();
+                        if let Some(layout) = &self.layout {
+                            let widget = self.app.view();
+                            let layout_resolved = layout.layouts.get(&widget.widget.id).unwrap();
+
+                            let clicked = check_clicked(layout_resolved, self.position);
+
+                            if clicked {
+                                if let NodeElement::VStack { children, .. }
+                                | NodeElement::HStack { children, .. } = widget.widget.element
+                                {
+                                    for child in children {
+                                        let layout_resolved =
+                                            layout.layouts.get(&child.id).unwrap();
+                                        let clicked = check_clicked(layout_resolved, self.position);
+                                        if clicked {
+                                            if let Some(message) = child.on_click {
+                                                self.app.update(message);
+                                                window.request_redraw();
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if let Some(message) = widget.widget.on_click {
+                                        self.app.update(message);
+                                        window.request_redraw();
+                                    }
+                                }
                             }
                         }
                     }
@@ -113,4 +126,15 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
             _ => (),
         }
     }
+}
+
+fn check_clicked(layout: &ResolvedLayout, click: PhysicalPosition<f64>) -> bool {
+    if click.x >= layout.x as f64
+        && click.x <= layout.x as f64 + layout.width as f64
+        && click.y >= layout.y as f64
+        && click.y <= layout.y as f64 + layout.height as f64
+    {
+        return true;
+    }
+    false
 }

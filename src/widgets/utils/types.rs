@@ -5,3 +5,16 @@ pub struct Padding {
     pub right: f32,
     pub bottom: f32,
 }
+
+#[derive(Debug)]
+pub enum HorizontalAlign {
+    Center,
+    Left,
+    Right,
+}
+#[derive(Debug)]
+pub enum VerticalAlign {
+    Top,
+    Center,
+    Bottom,
+}

@@ -1,8 +1,10 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::core::node::{Node, NodeElement, TextWeight};
+use crate::core::node::NodeElement;
 use crate::layout::LayoutEngine;
 use crate::renderer::components;
+use crate::{core::node::Widget, widgets::text::TextWeight};
 use components::{
     atlas::Atlas, lib::Area, lib::Color as canvasColor, lib::Item, lib::Shape, lib::ShapeType,
     renderer::Renderer,
@@ -15,7 +17,7 @@ use glyphon::{
 use wgpu::{ExperimentalFeatures, MultisampleState};
 use winit::window::Window;
 
-pub struct WgpuCtx<'window> {
+pub struct WgpuCtx<'window, Message> {
     surface: wgpu::Surface<'window>,
     surface_config: wgpu::SurfaceConfiguration,
     // adapter: wgpu::Adapter,
@@ -29,10 +31,11 @@ pub struct WgpuCtx<'window> {
     text_renderer: glyphon::TextRenderer,
     text_buffer: Vec<glyphon::Buffer>,
     text_positions: Vec<(f32, f32, f32, f32)>,
+    _marker: PhantomData<Message>,
 }
 
-impl<'window> WgpuCtx<'window> {
-    pub async fn new_async(window: Arc<Window>) -> WgpuCtx<'window> {
+impl<'window, Message> WgpuCtx<'window, Message> {
+    pub async fn new_async(window: Arc<Window>) -> WgpuCtx<'window, Message> {
         let instance = wgpu::Instance::default();
         let surface = instance.create_surface(Arc::clone(&window)).unwrap();
         let adapter = instance
@@ -121,10 +124,11 @@ impl<'window> WgpuCtx<'window> {
             text_buffer: Vec::new(),
             text_renderer: text_renderer,
             text_positions: Vec::new(),
+            _marker: PhantomData,
         }
     }
 
-    pub fn new(window: Arc<Window>) -> WgpuCtx<'window> {
+    pub fn new(window: Arc<Window>) -> WgpuCtx<'window, Message> {
         pollster::block_on(WgpuCtx::new_async(window))
     }
 
@@ -135,7 +139,7 @@ impl<'window> WgpuCtx<'window> {
         self.surface.configure(&self.device, &self.surface_config);
     }
 
-    pub fn draw(&mut self, element: &Node, layout: &LayoutEngine) {
+    pub fn draw(&mut self, element: &Widget<Message>, layout: &LayoutEngine<Message>) {
         self.text_buffer.clear();
         self.text_positions.clear();
         self.viewport.update(
@@ -244,8 +248,8 @@ impl<'window> WgpuCtx<'window> {
 
     fn draw_node(
         &mut self,
-        node: &Node,
-        layout: &LayoutEngine,
+        widget: &Widget<Message>,
+        layout: &LayoutEngine<Message>,
         encoder: &mut wgpu::CommandEncoder,
         texture_view: &wgpu::TextureView,
     ) {
@@ -254,7 +258,7 @@ impl<'window> WgpuCtx<'window> {
             font_size,
             line_height,
             weight,
-        } = &node.element
+        } = &widget.element
         {
             let weight = match weight {
                 TextWeight::THIN => 100,
@@ -283,18 +287,18 @@ impl<'window> WgpuCtx<'window> {
             text_buffer.shape_until_scroll(&mut self.font_system, false);
             // Push text buffer to vec
             self.text_buffer.push(text_buffer);
-            let layout = layout.layouts.get(&node.id).unwrap();
+            let layout = layout.layouts.get(&widget.id).unwrap();
             self.text_positions
                 .push((layout.x, layout.y, layout.width, layout.height));
         }
 
-        if let NodeElement::VStack { children, .. } = &node.element {
+        if let NodeElement::VStack { children, .. } = &widget.element {
             for child in children.iter() {
                 self.draw_node(child, layout, encoder, texture_view);
             }
         }
 
-        if let NodeElement::HStack { children, .. } = &node.element {
+        if let NodeElement::HStack { children, .. } = &widget.element {
             for child in children.iter() {
                 self.draw_node(child, layout, encoder, texture_view);
             }
@@ -306,7 +310,8 @@ impl<'window> WgpuCtx<'window> {
             height,
             color,
             radius,
-        } = &node.element
+            ..
+        } = &widget.element
         {
             let mut renderer = Renderer::new(
                 &self.device,
@@ -314,7 +319,7 @@ impl<'window> WgpuCtx<'window> {
                 wgpu::MultisampleState::default(),
                 None,
             );
-            let layouts = layout.layouts.get(&node.id).unwrap();
+            let layouts = layout.layouts.get(&widget.id).unwrap();
             let mut items = Vec::new();
             let mut atlas = Atlas::default();
             let (r, g, b, a) = color;

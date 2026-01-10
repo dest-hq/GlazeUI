@@ -1,25 +1,30 @@
-use crate::core::node::{Node, NodeElement};
+use std::marker::PhantomData;
+
+use crate::core::node::{NodeElement, Widget};
 use taffy::{Size, Style, prelude::length};
 
 use crate::widgets::utils::ui_id::next_id;
 
 // Helper to create spacer easier
 
-pub struct Spacer {
+pub struct Spacer<Message> {
+    _marker: PhantomData<Message>,
     height: f32,
     width: f32,
 }
 
 #[allow(dead_code)]
-pub fn spacer() -> Spacer {
+
+pub fn spacer<Message>() -> Spacer<Message> {
     Spacer::new()
 }
 
-impl Spacer {
+impl<Message> Spacer<Message> {
     pub fn new() -> Self {
         Self {
             height: 0.0,
             width: 0.0,
+            _marker: PhantomData,
         }
     }
 
@@ -34,24 +39,25 @@ impl Spacer {
     }
 }
 
-// Transform in Node
-impl From<Spacer> for Node {
-    fn from(builder: Spacer) -> Node {
-        let mut node = Node {
+// Transform in Widget
+impl<Message> From<Spacer<Message>> for Widget<Message> {
+    fn from(builder: Spacer<Message>) -> Widget<Message> {
+        let mut widget = Widget {
             id: next_id(),
             element: NodeElement::Spacer {
                 width: builder.width,
                 height: builder.height,
             },
+            on_click: None,
             style: Style::default(),
         };
-        node.style = Style {
+        widget.style = Style {
             size: Size {
                 width: length(builder.width),
                 height: length(builder.height),
             },
             ..Default::default()
         };
-        node
+        widget
     }
 }

@@ -1,31 +1,28 @@
-// Export node
-use crate::core::node;
-
 use std::marker::PhantomData;
 
-pub use node::Node;
+use crate::core::node::Widget;
 
 // App implementation
-pub trait App: Sized {
-    // Type of message
+pub trait App {
+    /// Type of message
     type Message;
 
-    // Update state
+    /// Update the state
     fn update(&mut self, message: Self::Message);
 
-    // Build the UI
+    /// Build the UI
     fn view(&self) -> Element<Self::Message>;
 }
 
 pub struct Element<Message> {
-    pub node: Node,
+    pub widget: Widget<Message>,
     _phantom: PhantomData<Message>,
 }
 
 impl<Message> Element<Message> {
-    pub fn new(node: Node) -> Self {
+    pub fn new(widget: Widget<Message>) -> Self {
         Self {
-            node,
+            widget,
             _phantom: PhantomData,
         }
     }

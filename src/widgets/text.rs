@@ -1,14 +1,29 @@
-use crate::core::node::{Node, NodeElement};
+use std::marker::PhantomData;
+
+use crate::core::node::{NodeElement, Widget};
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics};
 use taffy::{AvailableSpace, Size, Style, prelude::length};
 
-use crate::core::node::TextWeight;
 use crate::widgets::utils::ui_id::next_id;
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone)]
+pub enum TextWeight {
+    THIN,        // 100
+    EXTRA_LIGHT, // 200
+    LIGHT,       // 300
+    NORMAL,      // 400,
+    MEDIUM,      // 500
+    SEMIBOLD,    // 600
+    BOLD,        // 700
+    EXTRA_BOLD,  // 800
+    BLACK,       // 900
+}
 
 // Helper to create text easier
 
 #[allow(dead_code)]
-pub fn text(content: &str) -> Text {
+pub fn text<Message>(content: &str) -> Text<Message> {
     Text::new(content.to_string())
 }
 
@@ -60,16 +75,18 @@ impl CosmicTextContext {
     }
 }
 
-pub struct Text {
+pub struct Text<Message> {
+    _marker: PhantomData<Message>,
     content: String,
     font_size: f32,
     weight: TextWeight,
     id: Option<u64>,
 }
 
-impl Text {
+impl<Message> Text<Message> {
     pub fn new(content: String) -> Self {
         Self {
+            _marker: PhantomData,
             content: content,
             font_size: 14.0,
             weight: TextWeight::NORMAL,
@@ -87,15 +104,22 @@ impl Text {
         self
     }
 
-    pub fn id(mut self, id: u64) -> Self {
+    pub fn id(mut self, mut id: u64) -> Self {
+        if id < 1000 {
+            id = 1000 + id;
+            println!(
+                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+                id
+            );
+        }
         self.id = Some(id);
         self
     }
 }
 
-// Transform in Node
-impl From<Text> for Node {
-    fn from(builder: Text) -> Node {
+// Transform in widget
+impl<Message> From<Text<Message>> for Widget<Message> {
+    fn from(builder: Text<Message>) -> Widget<Message> {
         // Get text weight
         let weight = match builder.weight {
             TextWeight::THIN => 100,
@@ -139,7 +163,7 @@ impl From<Text> for Node {
         );
         // Get id
         let id = builder.id.unwrap_or(next_id());
-        let mut node = Node::new(
+        let mut widget = Widget::new(
             id,
             NodeElement::Text {
                 content: builder.content,
@@ -147,15 +171,16 @@ impl From<Text> for Node {
                 line_height: line_height,
                 weight: builder.weight,
             },
+            None,
         );
 
-        node.style = Style {
+        widget.style = Style {
             size: Size {
                 width: length(size.width),
                 height: length(size.height),
             },
             ..Default::default()
         };
-        node
+        widget
     }
 }

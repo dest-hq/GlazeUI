@@ -1,4 +1,9 @@
-use crate::core::node::{Node, NodeElement};
+use std::marker::PhantomData;
+
+use crate::{
+    core::node::{NodeElement, Widget},
+    widgets::utils::types::VerticalAlign,
+};
 use taffy::{Rect, Style, prelude::length};
 
 use crate::widgets::utils::{
@@ -8,20 +13,17 @@ use crate::widgets::utils::{
 
 // Helper to create hstack easier
 
-pub struct HStack {
-    children: Vec<Node>,
+pub struct HStack<Message> {
+    _marker: PhantomData<Message>,
+    children: Vec<Widget<Message>>,
     spacing: f32,
     id: Option<u64>,
     padding: Padding,
+    align: Option<VerticalAlign>,
 }
 
-#[allow(dead_code)]
-pub fn hstack(children: &[Node]) -> HStack {
-    HStack::new(children.to_vec())
-}
-
-impl HStack {
-    pub fn new(children: Vec<Node>) -> Self {
+impl<Message> HStack<Message> {
+    pub fn new(children: Vec<Widget<Message>>) -> Self {
         Self {
             children,
             spacing: 0.0,
@@ -32,6 +34,8 @@ impl HStack {
                 right: 0.0,
                 bottom: 0.0,
             },
+            _marker: PhantomData,
+            align: None,
         }
     }
 
@@ -40,12 +44,25 @@ impl HStack {
         self
     }
 
-    pub fn id(mut self, id: u64) -> Self {
+    pub fn id(mut self, mut id: u64) -> Self {
+        if id < 1000 {
+            id = 1000 + id;
+            println!(
+                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+                id
+            );
+        }
         self.id = Some(id);
         self
     }
-    pub fn paddint(mut self, padding: Padding) -> Self {
+
+    pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
+        self
+    }
+
+    pub fn align(mut self, align: VerticalAlign) -> Self {
+        self.align = Some(align);
         self
     }
 }
@@ -58,20 +75,21 @@ macro_rules! hstack {
     }};
 }
 
-// Transform in Node
-impl From<HStack> for Node {
-    fn from(builder: HStack) -> Node {
+// Transform in Widget
+impl<Message> From<HStack<Message>> for Widget<Message> {
+    fn from(builder: HStack<Message>) -> Widget<Message> {
         let id = builder.id.unwrap_or(next_id());
         sync_with(id);
-        let mut node = Node {
+        let mut widget = Widget {
             id: id,
             element: NodeElement::HStack {
                 spacing: builder.spacing,
                 children: builder.children,
             },
+            on_click: None,
             style: Style::default(),
         };
-        node.style = Style {
+        widget.style = Style {
             display: taffy::Display::Flex,
             flex_direction: taffy::FlexDirection::Row,
             gap: taffy::Size {
@@ -86,6 +104,13 @@ impl From<HStack> for Node {
             },
             ..Default::default()
         };
-        node
+        if let Some(vertical_align) = builder.align {
+            widget.style.justify_content = Some(match vertical_align {
+                VerticalAlign::Top => taffy::JustifyContent::Start,
+                VerticalAlign::Center => taffy::JustifyContent::Center,
+                VerticalAlign::Bottom => taffy::JustifyContent::End,
+            });
+        }
+        widget
     }
 }

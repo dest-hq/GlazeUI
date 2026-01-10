@@ -1,9 +1,10 @@
-use crate::core::node::{Node, NodeElement};
-use std::collections::HashMap;
+use crate::core::node::{NodeElement, Widget};
+use std::{collections::HashMap, marker::PhantomData};
 use taffy::{NodeId, TaffyTree};
 
 #[derive(Debug)]
-pub struct LayoutEngine {
+pub struct LayoutEngine<Message> {
+    _marker: PhantomData<Message>,
     pub taffy: TaffyTree,
     pub node_map: HashMap<u64, NodeId>,
     pub layouts: HashMap<u64, ResolvedLayout>,
@@ -18,9 +19,10 @@ pub struct ResolvedLayout {
 }
 
 #[allow(clippy::new_without_default)]
-impl LayoutEngine {
+impl<Message> LayoutEngine<Message> {
     pub fn new() -> Self {
         Self {
+            _marker: PhantomData,
             taffy: TaffyTree::new(),
             node_map: HashMap::new(),
             layouts: HashMap::new(),
@@ -28,7 +30,7 @@ impl LayoutEngine {
     }
 
     // Compute Layout
-    pub fn compute(&mut self, root: &Node, width: f32, height: f32) {
+    pub fn compute(&mut self, root: &Widget<Message>, width: f32, height: f32) {
         // Build taffy tree
         let root_id = self.build_taffy_tree(root);
 
@@ -46,7 +48,13 @@ impl LayoutEngine {
         self.resolve_node(root, root_id, 0.0, 0.0);
     }
 
-    fn resolve_node(&mut self, node: &Node, taffy_id: NodeId, parent_x: f32, parent_y: f32) {
+    fn resolve_node(
+        &mut self,
+        node: &Widget<Message>,
+        taffy_id: NodeId,
+        parent_x: f32,
+        parent_y: f32,
+    ) {
         let layout = self.taffy.layout(taffy_id).unwrap();
 
         let x = parent_x + layout.location.x;
@@ -63,9 +71,8 @@ impl LayoutEngine {
                 height: h,
             },
         );
-        println!("id: {:?}", node.id);
 
-        let children: Vec<&Node> = match &node.element {
+        let children: Vec<&Widget<Message>> = match &node.element {
             NodeElement::Container { child, .. } => vec![child],
             NodeElement::VStack { children, .. } | NodeElement::HStack { children, .. } => {
                 children.iter().collect()
@@ -79,7 +86,7 @@ impl LayoutEngine {
         }
     }
 
-    fn build_taffy_tree(&mut self, node: &Node) -> NodeId {
+    fn build_taffy_tree(&mut self, node: &Widget<Message>) -> NodeId {
         // Build children
         let child_ids: Vec<NodeId> = match &node.element {
             NodeElement::Container { child, .. } => vec![self.build_taffy_tree(child)],

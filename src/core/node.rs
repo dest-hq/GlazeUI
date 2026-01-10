@@ -1,48 +1,40 @@
+use crate::widgets::text::TextWeight;
 use taffy::Style;
 
-#[allow(non_camel_case_types)]
+/// Widget with a generic Message type
 #[derive(Debug, Clone)]
-pub enum TextWeight {
-    THIN,        // 100
-    EXTRA_LIGHT, // 200
-    LIGHT,       // 300
-    NORMAL,      // 400,
-    MEDIUM,      // 500
-    SEMIBOLD,    // 600
-    BOLD,        // 700
-    EXTRA_BOLD,  // 800
-    BLACK,       // 900
-}
-
-#[derive(Debug, Clone)]
-pub struct Node {
+pub struct Widget<Message> {
     /// Unique Id
     pub id: u64,
 
-    /// What type of UI element that is
-    pub element: NodeElement,
+    /// Type of UI element
+    pub element: NodeElement<Message>,
 
-    // Style of element
+    /// Styles
     pub style: Style,
+
+    /// Message that will be sent on click
+    pub on_click: Option<Message>,
 }
 
-impl Node {
-    /// Create a new node
-    pub fn new(id: u64, element: NodeElement) -> Self {
+impl<Message> Widget<Message> {
+    /// Create a new widget
+    pub fn new(id: u64, element: NodeElement<Message>, on_click: Option<Message>) -> Self {
         Self {
-            id: id,
+            id,
             element,
             style: Style::default(),
+            on_click,
         }
     }
 }
 
 /// Types of UI elements
 #[derive(Debug, Clone)]
-pub enum NodeElement {
-    /// A box that holds other things
+pub enum NodeElement<Message> {
+    /// A container that holds a child
     Container {
-        child: Box<Node>,
+        child: Box<Widget<Message>>,
         width: f32,
         height: f32,
         color: (u8, u8, u8, u8),
@@ -70,20 +62,17 @@ pub enum NodeElement {
     },
 
     /// Empty space
-    Spacer {
-        height: f32,
-        width: f32,
-    },
+    Spacer { height: f32, width: f32 },
 
-    // Vertical List
+    /// Vertical list
     VStack {
         spacing: f32,
-        children: Vec<Node>,
+        children: Vec<Widget<Message>>,
     },
 
-    // Horizontal List
+    /// Horizontal list
     HStack {
         spacing: f32,
-        children: Vec<Node>,
+        children: Vec<Widget<Message>>,
     },
 }
