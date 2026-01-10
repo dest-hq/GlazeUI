@@ -13,10 +13,22 @@ v0.1.0
 
 v0.1.1
 - [ ] - Custom fonts
-- [ ] Font fallback
-- [ ] Font cache API
+- [ ] - Font fallback
+- [ ] - Font cache API
 
 v0.1.2
-- [ ] API for custom widgets
-- [ ] Stable widget trait
-- [ ] Documentation
+- [ ] - API for custom widgets
+- [ ] - Stable widget trait
+- [ ] - Documentation
+
+v0.2.0
+- [ ] - Diagnostic API
+- [ ] - Animations (Limited)
+- [ ] - Async Support
+
+v0.3.0
+- [ ] - Add Skia Backend
+
+v0.3.1
+- [ ] - Mobile support via Skia (iOS - Metal, Android - OpenGL
+- [ ] - Web Support
