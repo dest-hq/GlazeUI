@@ -19,7 +19,7 @@ pub struct Container<Message> {
     color: (u8, u8, u8, u8),
     radius: f32,
     padding: Padding,
-    id: Option<u64>,
+    // id: Option<u64>,
     on_click: Option<Message>,
 }
 
@@ -38,7 +38,7 @@ impl<Message> Container<Message> {
                 right: 0.0,
                 bottom: 0.0,
             },
-            id: None,
+            // id: None,
             on_click: None,
         }
     }
@@ -54,17 +54,17 @@ impl<Message> Container<Message> {
         self
     }
 
-    pub fn id(mut self, mut id: u64) -> Self {
-        if id < 1000 {
-            id = 1000 + id;
-            println!(
-                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-                id
-            );
-        }
-        self.id = Some(id);
-        self
-    }
+    // pub fn id(mut self, mut id: u64) -> Self {
+    //     if id < 1000 {
+    //         id = 1000 + id;
+    //         println!(
+    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+    //             id
+    //         );
+    //     }
+    //     self.id = Some(id);
+    //     self
+    // }
 
     pub fn radius(mut self, corner_radius: f32) -> Self {
         self.radius = corner_radius;
@@ -84,9 +84,8 @@ impl<Message> Container<Message> {
 // Transform in Widget
 impl<Message> From<Container<Message>> for Widget<Message> {
     fn from(builder: Container<Message>) -> Widget<Message> {
-        let id = builder.id.unwrap_or(next_id());
         let mut widget = Widget::new(
-            id,
+            next_id(),
             NodeElement::Container {
                 child: Box::new(builder.child),
                 width: builder.width,

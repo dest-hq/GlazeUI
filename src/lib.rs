@@ -75,8 +75,9 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                 if let (Some(wgpu_ctx), Some(window)) =
                     (self.wgpu_ctx.as_mut(), self.window.as_ref())
                 {
-                    clear_counter();
                     let size = window.inner_size();
+
+                    clear_counter();
 
                     let mut layout: LayoutEngine<<A as App>::Message> = LayoutEngine::new();
                     let element = self.app.view();
@@ -89,6 +90,7 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                 if button == MouseButton::Left && state == ElementState::Pressed {
                     if let Some(window) = self.window.as_ref() {
                         if let Some(layout) = &self.layout {
+                            clear_counter();
                             let widget = self.app.view();
                             let layout_resolved = layout.layouts.get(&widget.widget.id).unwrap();
 
@@ -99,8 +101,10 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                 | NodeElement::HStack { children, .. } = widget.widget.element
                                 {
                                     for child in children {
+                                        // Get widget information (position, width and height)
                                         let layout_resolved =
                                             layout.layouts.get(&child.id).unwrap();
+                                        // Check if the widget was clicked
                                         let clicked = check_clicked(layout_resolved, self.position);
                                         if clicked {
                                             if let Some(message) = child.on_click {
@@ -109,10 +113,33 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                             }
                                         }
                                     }
-                                } else {
-                                    if let Some(message) = widget.widget.on_click {
-                                        self.app.update(message);
-                                        window.request_redraw();
+                                } else if let NodeElement::Container { child, .. } =
+                                    widget.widget.element
+                                {
+                                    // Get widget information (position, width and height)
+                                    let layout_resolved =
+                                        layout.layouts.get(&widget.widget.id).unwrap();
+                                    // Check if the widget was clicked
+                                    let clicked = check_clicked(layout_resolved, self.position);
+                                    if clicked {
+                                        if let Some(message) = child.on_click {
+                                            self.app.update(message);
+                                            window.request_redraw();
+                                        }
+                                    } else {
+                                        // Check the child of container
+
+                                        // Get widget information (position, width and height)
+                                        let layout_resolved =
+                                            layout.layouts.get(&child.id).unwrap();
+                                        // Check if the widget was clicked
+                                        let clicked = check_clicked(layout_resolved, self.position);
+                                        if clicked {
+                                            if let Some(message) = child.on_click {
+                                                self.app.update(message);
+                                                window.request_redraw();
+                                            }
+                                        }
                                     }
                                 }
                             }

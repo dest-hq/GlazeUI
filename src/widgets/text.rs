@@ -80,7 +80,7 @@ pub struct Text<Message> {
     content: String,
     font_size: f32,
     weight: TextWeight,
-    id: Option<u64>,
+    // id: Option<u64>,
 }
 
 impl<Message> Text<Message> {
@@ -90,7 +90,7 @@ impl<Message> Text<Message> {
             content: content,
             font_size: 14.0,
             weight: TextWeight::NORMAL,
-            id: None,
+            // id: None,
         }
     }
 
@@ -104,17 +104,17 @@ impl<Message> Text<Message> {
         self
     }
 
-    pub fn id(mut self, mut id: u64) -> Self {
-        if id < 1000 {
-            id = 1000 + id;
-            println!(
-                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-                id
-            );
-        }
-        self.id = Some(id);
-        self
-    }
+    // pub fn id(mut self, mut id: u64) -> Self {
+    //     if id < 1000 {
+    //         id = 1000 + id;
+    //         println!(
+    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+    //             id
+    //         );
+    //     }
+    //     self.id = Some(id);
+    //     self
+    // }
 }
 
 // Transform in widget
@@ -161,10 +161,8 @@ impl<Message> From<Text<Message>> for Widget<Message> {
             },
             &mut font_system,
         );
-        // Get id
-        let id = builder.id.unwrap_or(next_id());
         let mut widget = Widget::new(
-            id,
+            next_id(),
             NodeElement::Text {
                 content: builder.content,
                 font_size: builder.font_size,

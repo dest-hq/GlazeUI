@@ -6,10 +6,7 @@ use crate::{
 };
 use taffy::{Rect, Style, prelude::length};
 
-use crate::widgets::utils::{
-    types::Padding,
-    ui_id::{next_id, sync_with},
-};
+use crate::widgets::utils::{types::Padding, ui_id::next_id};
 
 // Helper to create hstack easier
 
@@ -17,7 +14,7 @@ pub struct HStack<Message> {
     _marker: PhantomData<Message>,
     children: Vec<Widget<Message>>,
     spacing: f32,
-    id: Option<u64>,
+    // id: Option<u64>,
     padding: Padding,
     align: Option<VerticalAlign>,
 }
@@ -27,7 +24,7 @@ impl<Message> HStack<Message> {
         Self {
             children,
             spacing: 0.0,
-            id: None,
+            // id: None,
             padding: Padding {
                 top: 0.0,
                 left: 0.0,
@@ -44,17 +41,17 @@ impl<Message> HStack<Message> {
         self
     }
 
-    pub fn id(mut self, mut id: u64) -> Self {
-        if id < 1000 {
-            id = 1000 + id;
-            println!(
-                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-                id
-            );
-        }
-        self.id = Some(id);
-        self
-    }
+    // pub fn id(mut self, mut id: u64) -> Self {
+    //     if id < 1000 {
+    //         id = 1000 + id;
+    //         println!(
+    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+    //             id
+    //         );
+    //     }
+    //     self.id = Some(id);
+    //     self
+    // }
 
     pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
@@ -78,10 +75,8 @@ macro_rules! hstack {
 // Transform in Widget
 impl<Message> From<HStack<Message>> for Widget<Message> {
     fn from(builder: HStack<Message>) -> Widget<Message> {
-        let id = builder.id.unwrap_or(next_id());
-        sync_with(id);
         let mut widget = Widget {
-            id: id,
+            id: next_id(),
             element: NodeElement::HStack {
                 spacing: builder.spacing,
                 children: builder.children,

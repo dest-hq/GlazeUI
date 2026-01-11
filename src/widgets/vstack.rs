@@ -16,7 +16,7 @@ pub struct VStack<Message> {
     children: Vec<Widget<Message>>,
     spacing: f32,
     padding: Padding,
-    id: Option<u64>,
+    // id: Option<u64>,
     align: Option<HorizontalAlign>,
 }
 
@@ -32,7 +32,7 @@ impl<Message> VStack<Message> {
                 right: 0.0,
                 bottom: 0.0,
             },
-            id: None,
+            // id: None,
             align: None,
         }
     }
@@ -52,17 +52,17 @@ impl<Message> VStack<Message> {
         self
     }
 
-    pub fn id(mut self, mut id: u64) -> Self {
-        if id < 1000 {
-            id = 1000 + id;
-            println!(
-                "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-                id
-            );
-        }
-        self.id = Some(id);
-        self
-    }
+    // pub fn id(mut self, mut id: u64) -> Self {
+    //     if id < 1000 {
+    //         id = 1000 + id;
+    //         println!(
+    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
+    //             id
+    //         );
+    //     }
+    //     self.id = Some(id);
+    //     self
+    // }
 }
 
 #[macro_export]
@@ -76,9 +76,8 @@ macro_rules! vstack {
 // Transform in widget
 impl<Message> From<VStack<Message>> for Widget<Message> {
     fn from(builder: VStack<Message>) -> Widget<Message> {
-        let id = builder.id.unwrap_or(next_id());
         let mut widget = Widget {
-            id: id,
+            id: next_id(),
             element: NodeElement::VStack {
                 spacing: builder.spacing,
                 children: builder.children,
