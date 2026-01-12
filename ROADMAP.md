@@ -30,5 +30,5 @@ v0.4.0
 - [ ] - Add Skia Backend
 
 v0.4.1
-- [ ] - Mobile support via Skia (iOS - Metal, Android - OpenGL)
+- [ ] - Mobile support
 - [ ] - Web Support
