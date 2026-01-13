@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use crate::{
     core::node::{NodeElement, Widget},
-    widgets::utils::types::VerticalAlign,
+    widgets::utils::types::{HorizontalAlign, VerticalAlign},
 };
-use taffy::{Rect, Style, prelude::length};
+use taffy::{Dimension, Rect, Size, Style, prelude::length};
 
 use crate::widgets::utils::{types::Padding, ui_id::next_id};
 
@@ -16,7 +16,8 @@ pub struct HStack<Message> {
     spacing: f32,
     // id: Option<u64>,
     padding: Padding,
-    align: Option<VerticalAlign>,
+    vertical_align: Option<VerticalAlign>,
+    horizontal_align: Option<HorizontalAlign>,
 }
 
 impl<Message> HStack<Message> {
@@ -32,7 +33,8 @@ impl<Message> HStack<Message> {
                 bottom: 0.0,
             },
             _marker: PhantomData,
-            align: None,
+            vertical_align: None,
+            horizontal_align: None,
         }
     }
 
@@ -58,8 +60,13 @@ impl<Message> HStack<Message> {
         self
     }
 
-    pub fn align(mut self, align: VerticalAlign) -> Self {
-        self.align = Some(align);
+    pub fn vertical_align(mut self, vertical_align: VerticalAlign) -> Self {
+        self.vertical_align = Some(vertical_align);
+        self
+    }
+
+    pub fn horizontal_align(mut self, horizontal_align: HorizontalAlign) -> Self {
+        self.horizontal_align = Some(horizontal_align);
         self
     }
 }
@@ -68,7 +75,7 @@ impl<Message> HStack<Message> {
 macro_rules! hstack {
     ($($child:expr),*) => {{
         let children = vec![$($child),*];
-        $crate::hstack::HStack::new(children)
+        glazeui::widgets::hstack::HStack::new(children)
     }};
 }
 
@@ -87,6 +94,10 @@ impl<Message> From<HStack<Message>> for Widget<Message> {
         widget.style = Style {
             display: taffy::Display::Flex,
             flex_direction: taffy::FlexDirection::Row,
+            size: Size {
+                width: Dimension::percent(1.0),
+                height: Dimension::percent(1.0),
+            },
             gap: taffy::Size {
                 width: length(builder.spacing),
                 height: length(0.0),
@@ -99,11 +110,18 @@ impl<Message> From<HStack<Message>> for Widget<Message> {
             },
             ..Default::default()
         };
-        if let Some(vertical_align) = builder.align {
-            widget.style.justify_content = Some(match vertical_align {
-                VerticalAlign::Top => taffy::JustifyContent::Start,
-                VerticalAlign::Center => taffy::JustifyContent::Center,
-                VerticalAlign::Bottom => taffy::JustifyContent::End,
+        if let Some(vertical_align) = builder.vertical_align {
+            widget.style.align_items = Some(match vertical_align {
+                VerticalAlign::Top => taffy::AlignItems::Start,
+                VerticalAlign::Center => taffy::AlignItems::Center,
+                VerticalAlign::Bottom => taffy::AlignItems::End,
+            });
+        }
+        if let Some(horizontal_align) = builder.horizontal_align {
+            widget.style.justify_content = Some(match horizontal_align {
+                HorizontalAlign::Left => taffy::JustifyContent::Start,
+                HorizontalAlign::Center => taffy::JustifyContent::Center,
+                HorizontalAlign::Right => taffy::JustifyContent::End,
             });
         }
         widget
