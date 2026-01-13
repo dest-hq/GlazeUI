@@ -101,6 +101,25 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                 | NodeElement::HStack { children, .. } = widget.widget.element
                                 {
                                     for child in children {
+                                        if let NodeElement::HStack { children, .. }
+                                        | NodeElement::VStack { children, .. } = child.element
+                                        {
+                                            for child in children {
+                                                // Get widget information (position, width and height)
+                                                let layout_resolved =
+                                                    layout.layouts.get(&child.id).unwrap();
+                                                // Check if the widget was clicked
+                                                let clicked =
+                                                    check_clicked(layout_resolved, self.position);
+                                                if clicked {
+                                                    if let Some(message) = child.on_click {
+                                                        self.app.update(message);
+                                                        window.request_redraw();
+                                                    }
+                                                }
+                                            }
+                                        }
+
                                         // Get widget information (position, width and height)
                                         let layout_resolved =
                                             layout.layouts.get(&child.id).unwrap();

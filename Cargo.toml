@@ -1,6 +1,6 @@
 [package]
 name = "glazeui"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
 
@@ -14,3 +14,16 @@ bytemuck = "1.24.0"
 image = "0.25.9"
 cosmic-text = "0.16.0"
 
+[workspace]
+members = [
+    "examples/*",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+glazeui = { version = "0.1.0", path = "." }
+winit = "0.30.12"

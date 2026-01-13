@@ -850,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "glazeui"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cosmic-text 0.16.0",
@@ -935,6 +935,15 @@ name = "grid"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9e2d4c0a8296178d8802098410ca05d86b17a10bb5ab559b3fb404c1f948220"
+
+[[package]]
+name = "guess_number"
+version = "0.1.0"
+dependencies = [
+ "glazeui",
+ "rand",
+ "winit",
+]
 
 [[package]]
 name = "half"
