@@ -95,10 +95,6 @@ impl<Message> From<VStack<Message>> for Widget<Message> {
         widget.style = Style {
             display: taffy::Display::Flex,
             flex_direction: taffy::FlexDirection::Column,
-            size: Size {
-                width: Dimension::percent(1.0),
-                height: Dimension::percent(1.0),
-            },
             gap: taffy::Size {
                 width: length(0.0),
                 height: length(builder.spacing),
@@ -117,6 +113,11 @@ impl<Message> From<VStack<Message>> for Widget<Message> {
                 VerticalAlign::Center => taffy::AlignItems::Center,
                 VerticalAlign::Bottom => taffy::AlignItems::End,
             });
+
+            widget.style.size = Size {
+                width: Dimension::percent(1.0),
+                height: Dimension::percent(1.0),
+            };
         }
         if let Some(horizontal_align) = builder.horizontal_align {
             widget.style.justify_content = Some(match horizontal_align {
@@ -124,6 +125,11 @@ impl<Message> From<VStack<Message>> for Widget<Message> {
                 HorizontalAlign::Center => taffy::JustifyContent::Center,
                 HorizontalAlign::Right => taffy::JustifyContent::End,
             });
+
+            widget.style.size = Size {
+                width: Dimension::percent(1.0),
+                height: Dimension::percent(1.0),
+            };
         }
         widget
     }
