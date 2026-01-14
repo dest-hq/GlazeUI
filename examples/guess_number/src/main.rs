@@ -1,14 +1,11 @@
 use glazeui::{
+    Error, Theme,
     core::app::{App, Element},
-    hstack, vstack,
+    hstack, start, vstack,
     widgets::{
         container::container,
         text::{self, text},
     },
-};
-use winit::{
-    dpi::{PhysicalSize, Size},
-    window::WindowAttributes,
 };
 
 fn generate_numbers() -> (i32, i32, i32) {
@@ -24,7 +21,7 @@ fn generate_numbers() -> (i32, i32, i32) {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let (n1, n2, n3) = generate_numbers();
 
     let app = Random {
@@ -34,14 +31,12 @@ fn main() {
         text: "Guess what number".to_string(),
     };
 
-    let window = WindowAttributes::default()
-        .with_inner_size(Size::Physical(PhysicalSize {
-            width: 900,
-            height: 900,
-        }))
-        .with_title("Guess game");
-
-    glazeui::run(app, window);
+    start(app)
+        .title("Guess game")
+        .size(900, 900)
+        .theme(Theme::Dark)
+        .transparent(true)
+        .run()
 }
 
 struct Random {
@@ -79,17 +74,17 @@ impl App for Random {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let number = text("?").size(30.0).into();
+        let number = text("?").size(30).into();
 
         let mission = text(&self.text)
-            .size(20.0)
+            .size(20)
             .weight(text::TextWeight::LIGHT)
             .into();
 
         let button1 = container(
             vstack!(
                 text(&self.number1.to_string())
-                    .size(20.0)
+                    .size(20)
                     .weight(text::TextWeight::NORMAL)
                     .into()
             )
@@ -105,7 +100,7 @@ impl App for Random {
         let button2 = container(
             vstack!(
                 text(&self.number2.to_string())
-                    .size(20.0)
+                    .size(20)
                     .weight(text::TextWeight::NORMAL)
                     .into()
             )

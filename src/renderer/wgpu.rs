@@ -172,7 +172,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                             r: 0.0,
                             g: 0.0,
                             b: 0.0,
-                            a: 1.0,
+                            a: 0.9,
                         }),
                         store: wgpu::StoreOp::Store,
                     },
@@ -273,7 +273,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             };
             let mut text_buffer = Buffer::new(
                 &mut self.font_system,
-                Metrics::new(*font_size, *line_height),
+                Metrics::new(*font_size as f32, *line_height),
             );
             text_buffer.set_text(
                 &mut self.font_system,
