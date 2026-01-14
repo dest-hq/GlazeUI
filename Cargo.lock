@@ -942,7 +942,6 @@ version = "0.1.0"
 dependencies = [
  "glazeui",
  "rand",
- "winit",
 ]
 
 [[package]]

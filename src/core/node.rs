@@ -43,7 +43,7 @@ pub enum NodeElement<Message> {
 
     Text {
         content: String,
-        font_size: f32,
+        font_size: u32,
         line_height: f32,
         weight: TextWeight,
     },

@@ -5,8 +5,6 @@ use taffy::{Size, Style, prelude::length};
 
 use crate::widgets::utils::ui_id::next_id;
 
-// Helper to create spacer easier
-
 pub struct Spacer<Message> {
     _marker: PhantomData<Message>,
     height: f32,
@@ -15,6 +13,7 @@ pub struct Spacer<Message> {
 
 #[allow(dead_code)]
 
+// Helper to create spacer easier
 pub fn spacer<Message>() -> Spacer<Message> {
     Spacer::new()
 }

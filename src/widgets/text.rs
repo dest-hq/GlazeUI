@@ -78,7 +78,7 @@ impl CosmicTextContext {
 pub struct Text<Message> {
     _marker: PhantomData<Message>,
     content: String,
-    font_size: f32,
+    font_size: u32,
     weight: TextWeight,
     // id: Option<u64>,
 }
@@ -88,13 +88,13 @@ impl<Message> Text<Message> {
         Self {
             _marker: PhantomData,
             content: content,
-            font_size: 14.0,
+            font_size: 14,
             weight: TextWeight::NORMAL,
             // id: None,
         }
     }
 
-    pub fn size(mut self, font_size: f32) -> Self {
+    pub fn size(mut self, font_size: u32) -> Self {
         self.font_size = font_size;
         self
     }
@@ -134,10 +134,10 @@ impl<Message> From<Text<Message>> for Widget<Message> {
         };
 
         // Get line height
-        let line_height = builder.font_size * 1.3;
+        let line_height = builder.font_size as f32 * 1.3;
 
         let metrics = Metrics {
-            font_size: builder.font_size,
+            font_size: builder.font_size as f32,
             line_height: line_height,
         };
         // Get system font

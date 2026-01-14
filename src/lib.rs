@@ -9,30 +9,126 @@ use renderer::wgpu::WgpuCtx;
 use widgets::utils::ui_id::clear_counter;
 use winit::{
     application::ApplicationHandler,
-    dpi::PhysicalPosition,
+    dpi::{PhysicalPosition, PhysicalSize, Size},
+    error::EventLoopError,
     event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
-    window::{Window, WindowAttributes, WindowId},
+    window::{Theme as WinitTheme, Window, WindowAttributes, WindowId},
 };
 
 use crate::{core::node::NodeElement, layout::ResolvedLayout};
 
-// Function to run the app
-pub fn run<A: App>(_app: A, window_settings: WindowAttributes) {
-    let event_loop = EventLoop::new().unwrap();
+pub type Error = EventLoopError;
 
-    event_loop.set_control_flow(ControlFlow::Wait);
-
-    let mut window = UserWindow::<A> {
-        window_settings: window_settings,
-        app: _app,
-        window: None,
-        wgpu_ctx: None,
-        layout: None,
-        position: PhysicalPosition::new(0.0, 0.0),
-    };
-    let _ = event_loop.run_app(&mut window);
+pub enum Theme {
+    Dark,
+    Light,
 }
+
+// Helper to start app
+pub fn start<A: App>(app: A) -> Run<A> {
+    Run::new(app)
+}
+
+pub struct Run<A: App> {
+    app: A,
+    window_settings: WindowAttributes,
+}
+
+impl<A: App> Run<A> {
+    pub fn new(app: A) -> Self {
+        Self {
+            app: app,
+            window_settings: WindowAttributes::default().with_title("GlazeUI"),
+        }
+    }
+
+    pub fn title(mut self, name: &str) -> Self {
+        self.window_settings = self.window_settings.with_title(name);
+        self
+    }
+
+    pub fn size(mut self, width: u32, height: u32) -> Self {
+        self.window_settings = self
+            .window_settings
+            .with_inner_size(Size::Physical(PhysicalSize {
+                width: width,
+                height: height,
+            }));
+        self
+    }
+
+    pub fn max_size(mut self, width: u32, height: u32) -> Self {
+        self.window_settings =
+            self.window_settings
+                .with_max_inner_size(Size::Physical(PhysicalSize {
+                    width: width,
+                    height: height,
+                }));
+        self
+    }
+
+    pub fn min_size(mut self, width: u32, height: u32) -> Self {
+        self.window_settings =
+            self.window_settings
+                .with_min_inner_size(Size::Physical(PhysicalSize {
+                    width: width,
+                    height: height,
+                }));
+        self
+    }
+
+    pub fn blur(mut self, blur: bool) -> Self {
+        self.window_settings = self.window_settings.with_blur(blur);
+        self
+    }
+
+    pub fn transparent(mut self, transparent: bool) -> Self {
+        self.window_settings = self.window_settings.with_transparent(transparent);
+        self
+    }
+
+    pub fn decorations(mut self, decorations: bool) -> Self {
+        self.window_settings = self.window_settings.with_decorations(decorations);
+        self
+    }
+
+    pub fn resizable(mut self, resizable: bool) -> Self {
+        self.window_settings = self.window_settings.with_resizable(resizable);
+        self
+    }
+
+    // The theme of titlebar
+    pub fn theme(mut self, theme: Theme) -> Self {
+        let theme = match theme {
+            Theme::Dark => WinitTheme::Dark,
+            Theme::Light => WinitTheme::Light,
+        };
+        self.window_settings = self.window_settings.with_theme(Some(theme));
+        self
+    }
+
+    // Function to run the app
+    pub fn run(self) -> Result<(), Error> {
+        let event_loop = EventLoop::new().unwrap();
+
+        event_loop.set_control_flow(ControlFlow::Wait);
+
+        let mut window = UserWindow::<A> {
+            window_settings: self.window_settings,
+            app: self.app,
+            window: None,
+            wgpu_ctx: None,
+            layout: None,
+            position: PhysicalPosition::new(0.0, 0.0),
+        };
+        match event_loop.run_app(&mut window) {
+            Ok(()) => return Ok(()),
+            Err(e) => return Err(e),
+        }
+    }
+}
+
 #[derive(Default)]
 struct UserWindow<'window, A: App> {
     window: Option<Arc<Window>>,
