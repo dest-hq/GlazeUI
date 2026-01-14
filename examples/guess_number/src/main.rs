@@ -1,5 +1,5 @@
 use glazeui::{
-    Error, Theme,
+    Error,
     core::app::{App, Element},
     hstack, start, vstack,
     widgets::{
@@ -34,7 +34,6 @@ fn main() -> Result<(), Error> {
     start(app)
         .title("Guess game")
         .size(900, 900)
-        .theme(Theme::Dark)
         .transparent(true)
         .run()
 }
