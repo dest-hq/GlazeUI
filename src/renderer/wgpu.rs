@@ -1,10 +1,10 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::core::node::NodeElement;
+use crate::core::widget::WidgetElement;
 use crate::layout::LayoutEngine;
 use crate::renderer::components;
-use crate::{core::node::Widget, widgets::text::TextWeight};
+use crate::{core::widget::Widget, widgets::text::TextWeight};
 use components::{
     atlas::Atlas, lib::Area, lib::Color as canvasColor, lib::Item, lib::Shape, lib::ShapeType,
     renderer::Renderer,
@@ -20,10 +20,10 @@ use winit::window::Window;
 pub struct WgpuCtx<'window, Message> {
     surface: wgpu::Surface<'window>,
     surface_config: wgpu::SurfaceConfiguration,
-    // adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    // render_pipeline: wgpu::RenderPipeline,
+
+    // Text
     font_system: FontSystem,
     swash_cache: SwashCache,
     viewport: glyphon::Viewport,
@@ -31,7 +31,33 @@ pub struct WgpuCtx<'window, Message> {
     text_renderer: glyphon::TextRenderer,
     text_buffer: Vec<glyphon::Buffer>,
     text_positions: Vec<(f32, f32, f32, f32)>,
+
+    // Shape
+    shape_renderer: Renderer,
+
     _marker: PhantomData<Message>,
+}
+
+pub struct UiFrame {
+    pub texts: Vec<TextCmd>,
+    pub shapes: Vec<ShapeCommand>,
+}
+
+pub struct TextCmd {
+    pub buffer_index: usize,
+    pub left: f32,
+    pub top: f32,
+    pub bounds: TextBounds,
+    pub color: Color,
+}
+
+pub struct ShapeCommand {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub color: (u8, u8, u8, u8),
+    pub radius: f32,
 }
 
 impl<'window, Message> WgpuCtx<'window, Message> {
@@ -101,14 +127,23 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         surface_config.alpha_mode = wgpu::CompositeAlphaMode::PreMultiplied;
         surface.configure(&device, &surface_config);
 
-        // Set up text renderer
         let font_system = FontSystem::new();
         let swash_cache = SwashCache::new();
         let cache = Cache::new(&device);
         let viewport = Viewport::new(&device, &cache);
         let mut atlas = TextAtlas::new(&device, &queue, &cache, swapchain_format);
+
+        // Set up text renderer
         let text_renderer =
             TextRenderer::new(&mut atlas, &device, MultisampleState::default(), None);
+
+        // Set up shape renderer
+        let shape_renderer = Renderer::new(
+            &device,
+            &surface_config.format,
+            wgpu::MultisampleState::default(),
+            None,
+        );
 
         WgpuCtx {
             surface,
@@ -124,6 +159,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             text_buffer: Vec::new(),
             text_renderer: text_renderer,
             text_positions: Vec::new(),
+            shape_renderer: shape_renderer,
             _marker: PhantomData,
         }
     }
@@ -149,18 +185,28 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 height: self.surface_config.height,
             },
         );
-        let surface_texture = self
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture");
-        let texture_view = surface_texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        let mut frame = UiFrame {
+            texts: Vec::new(),
+            shapes: Vec::new(),
+        };
+
+        // Collect Widgets
+        self.collect_widgets(element, layout, &mut frame);
+
+        // Render UI
+        self.render(frame);
+    }
+
+    fn render(&mut self, frame: UiFrame) {
+        let surface_texture = self.surface.get_current_texture().unwrap();
+        let texture_view = surface_texture.texture.create_view(&Default::default());
+
+        let mut encoder = self.device.create_command_encoder(&Default::default());
+
+        // 1. Background
         {
-            let mut _r_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut _background_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 multiview_mask: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -172,7 +218,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                             r: 0.0,
                             g: 0.0,
                             b: 0.0,
-                            a: 0.9,
+                            a: 1.0,
                         }),
                         store: wgpu::StoreOp::Store,
                     },
@@ -183,10 +229,73 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             });
         }
 
-        // Render UI
-        self.draw_node(element, layout, &mut encoder, &texture_view);
+        // 2. Shapes
 
-        let mut text_areas: Vec<TextArea> = Vec::new();
+        let mut items = Vec::new();
+        let mut atlas = Atlas::default();
+        for (
+            _idx,
+            ShapeCommand {
+                x,
+                y,
+                width,
+                height,
+                color,
+                radius,
+            },
+        ) in frame.shapes.iter().enumerate()
+        {
+            let (r, g, b, a) = color;
+            items.push((
+                Area {
+                    offset: (*x, *y),
+                    bounds: None,
+                },
+                Item::Shape(Shape {
+                    shape: ShapeType::RoundedRectangle(
+                        0.0,
+                        (*width, *height),
+                        0.0, // This is responsible for setting how much it is flipped
+                        radius.min(width * 0.5).min(height * 0.5),
+                    ),
+                    color: canvasColor(*r, *g, *b, *a),
+                }),
+            ));
+        }
+
+        self.shape_renderer.prepare(
+            &self.device,
+            &self.queue,
+            self.surface_config.width as f32,
+            self.surface_config.height as f32,
+            &mut atlas,
+            items,
+        );
+
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("shape_pass"),
+                multiview_mask: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &texture_view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+            self.shape_renderer.render(&mut render_pass);
+        }
+
+        // 3. Text
+
+        let mut text_areas = Vec::new();
+
         for (idx, (x, y, width, height)) in self.text_positions.iter().enumerate() {
             text_areas.push(TextArea {
                 buffer: &self.text_buffer[idx],
@@ -204,7 +313,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             });
         }
 
-        if !text_areas.is_empty() {
+        if !frame.texts.is_empty() && !text_areas.is_empty() {
             self.text_renderer
                 .prepare(
                     &self.device,
@@ -217,43 +326,40 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 )
                 .unwrap();
 
-            {
-                let mut text_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("text_pass"),
-                    multiview_mask: None,
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &texture_view,
-                        resolve_target: None,
-                        depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
-                self.text_renderer
-                    .render(&mut self.atlas, &self.viewport, &mut text_pass)
-                    .unwrap();
-            }
+            let mut text_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("text_pass"),
+                multiview_mask: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &texture_view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+
+            self.text_renderer
+                .render(&mut self.atlas, &self.viewport, &mut text_pass)
+                .unwrap();
         }
 
         self.queue.submit(Some(encoder.finish()));
         surface_texture.present();
-
         self.atlas.trim();
     }
 
-    fn draw_node(
+    fn collect_widgets(
         &mut self,
         widget: &Widget<Message>,
         layout: &LayoutEngine<Message>,
-        encoder: &mut wgpu::CommandEncoder,
-        texture_view: &wgpu::TextureView,
+        frame: &mut UiFrame,
     ) {
-        if let NodeElement::Text {
+        if let WidgetElement::Text {
             content,
             font_size,
             line_height,
@@ -285,26 +391,48 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 None,
             );
             text_buffer.shape_until_scroll(&mut self.font_system, false);
+
             // Push text buffer to vec
             self.text_buffer.push(text_buffer);
-            let layout = layout.layouts.get(&widget.id).unwrap();
-            self.text_positions
-                .push((layout.x, layout.y, layout.width, layout.height));
+
+            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
+
+            self.text_positions.push((
+                layout_resolved.x,
+                layout_resolved.y,
+                layout_resolved.width,
+                layout_resolved.height,
+            ));
+
+            let bounds = TextBounds {
+                left: layout_resolved.x as i32,
+                top: layout_resolved.y as i32,
+                right: (layout_resolved.x + layout_resolved.width) as i32,
+                bottom: (layout_resolved.y + layout_resolved.height) as i32,
+            };
+
+            frame.texts.push(TextCmd {
+                buffer_index: self.text_buffer.len(),
+                left: layout_resolved.x,
+                top: layout_resolved.y,
+                bounds: bounds,
+                color: Color::rgb(255, 255, 255),
+            });
         }
 
-        if let NodeElement::VStack { children, .. } = &widget.element {
+        if let WidgetElement::VStack { children, .. } = &widget.element {
             for child in children.iter() {
-                self.draw_node(child, layout, encoder, texture_view);
+                self.collect_widgets(child, layout, frame);
             }
         }
 
-        if let NodeElement::HStack { children, .. } = &widget.element {
+        if let WidgetElement::HStack { children, .. } = &widget.element {
             for child in children.iter() {
-                self.draw_node(child, layout, encoder, texture_view);
+                self.collect_widgets(child, layout, frame);
             }
         }
 
-        if let NodeElement::Container {
+        if let WidgetElement::Container {
             child,
             width,
             height,
@@ -313,61 +441,17 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             ..
         } = &widget.element
         {
-            let mut renderer = Renderer::new(
-                &self.device,
-                &self.surface_config.format,
-                wgpu::MultisampleState::default(),
-                None,
-            );
-            let layouts = layout.layouts.get(&widget.id).unwrap();
-            let mut items = Vec::new();
-            let mut atlas = Atlas::default();
-            let (r, g, b, a) = color;
-            let radius = radius.min(width * 0.5).min(height * 0.5);
-            items.push((
-                Area {
-                    offset: (layouts.x, layouts.y),
-                    bounds: None,
-                },
-                Item::Shape(Shape {
-                    shape: ShapeType::RoundedRectangle(
-                        0.0,
-                        (*width, *height),
-                        0.0, // This is responsible for setting how much it is flipped
-                        radius,
-                    ),
-                    color: canvasColor(*r, *g, *b, *a),
-                }),
-            ));
-            renderer.prepare(
-                &self.device,
-                &self.queue,
-                self.surface_config.width as f32,
-                self.surface_config.height as f32,
-                &mut atlas,
-                items,
-            );
+            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
+            frame.shapes.push(ShapeCommand {
+                x: layout_resolved.x,
+                y: layout_resolved.y,
+                width: *width,
+                height: *height,
+                color: *color,
+                radius: radius.min(width * 0.5).min(height * 0.5),
+            });
 
-            {
-                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("text_pass"),
-                    multiview_mask: None,
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &texture_view,
-                        resolve_target: None,
-                        depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
-                renderer.render(&mut render_pass);
-            }
-            self.draw_node(child, layout, encoder, texture_view);
+            self.collect_widgets(child, layout, frame);
         }
     }
 }

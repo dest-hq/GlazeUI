@@ -16,7 +16,7 @@ use winit::{
     window::{Theme as WinitTheme, Window, WindowAttributes, WindowId},
 };
 
-use crate::{core::node::NodeElement, layout::ResolvedLayout};
+use crate::{core::widget::WidgetElement, layout::ResolvedLayout};
 
 pub type Error = EventLoopError;
 
@@ -193,12 +193,12 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                             let clicked = check_clicked(layout_resolved, self.position);
 
                             if clicked {
-                                if let NodeElement::VStack { children, .. }
-                                | NodeElement::HStack { children, .. } = widget.widget.element
+                                if let WidgetElement::VStack { children, .. }
+                                | WidgetElement::HStack { children, .. } = widget.widget.element
                                 {
                                     for child in children {
-                                        if let NodeElement::HStack { children, .. }
-                                        | NodeElement::VStack { children, .. } = child.element
+                                        if let WidgetElement::HStack { children, .. }
+                                        | WidgetElement::VStack { children, .. } = child.element
                                         {
                                             for child in children {
                                                 // Get widget information (position, width and height)
@@ -228,7 +228,7 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                             }
                                         }
                                     }
-                                } else if let NodeElement::Container { child, .. } =
+                                } else if let WidgetElement::Container { child, .. } =
                                     widget.widget.element
                                 {
                                     // Get widget information (position, width and height)

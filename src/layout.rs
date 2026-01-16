@@ -1,4 +1,4 @@
-use crate::core::node::{NodeElement, Widget};
+use crate::core::widget::{Widget, WidgetElement};
 use std::{collections::HashMap, marker::PhantomData};
 use taffy::{NodeId, TaffyTree};
 
@@ -73,8 +73,8 @@ impl<Message> LayoutEngine<Message> {
         );
 
         let children: Vec<&Widget<Message>> = match &node.element {
-            NodeElement::Container { child, .. } => vec![child],
-            NodeElement::VStack { children, .. } | NodeElement::HStack { children, .. } => {
+            WidgetElement::Container { child, .. } => vec![child],
+            WidgetElement::VStack { children, .. } | WidgetElement::HStack { children, .. } => {
                 children.iter().collect()
             }
             _ => vec![],
@@ -89,11 +89,13 @@ impl<Message> LayoutEngine<Message> {
     fn build_taffy_tree(&mut self, node: &Widget<Message>) -> NodeId {
         // Build children
         let child_ids: Vec<NodeId> = match &node.element {
-            NodeElement::Container { child, .. } => vec![self.build_taffy_tree(child)],
-            NodeElement::VStack { children, .. } | NodeElement::HStack { children, .. } => children
-                .iter()
-                .map(|child| self.build_taffy_tree(child))
-                .collect(),
+            WidgetElement::Container { child, .. } => vec![self.build_taffy_tree(child)],
+            WidgetElement::VStack { children, .. } | WidgetElement::HStack { children, .. } => {
+                children
+                    .iter()
+                    .map(|child| self.build_taffy_tree(child))
+                    .collect()
+            }
             _ => Vec::new(),
         };
 

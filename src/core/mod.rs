@@ -1,2 +1,2 @@
 pub mod app;
-pub mod node;
+pub mod widget;

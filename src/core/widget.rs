@@ -8,7 +8,7 @@ pub struct Widget<Message> {
     pub id: u64,
 
     /// Type of UI element
-    pub element: NodeElement<Message>,
+    pub element: WidgetElement<Message>,
 
     /// Styles
     pub style: Style,
@@ -19,7 +19,7 @@ pub struct Widget<Message> {
 
 impl<Message> Widget<Message> {
     /// Create a new widget
-    pub fn new(id: u64, element: NodeElement<Message>, on_click: Option<Message>) -> Self {
+    pub fn new(id: u64, element: WidgetElement<Message>, on_click: Option<Message>) -> Self {
         Self {
             id,
             element,
@@ -31,7 +31,7 @@ impl<Message> Widget<Message> {
 
 /// Types of UI elements
 #[derive(Debug, Clone)]
-pub enum NodeElement<Message> {
+pub enum WidgetElement<Message> {
     /// A container that holds a child
     Container {
         child: Box<Widget<Message>>,

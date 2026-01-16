@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::core::node::Widget;
+use crate::core::widget::Widget;
 
 // App implementation
 pub trait App {

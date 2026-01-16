@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::core::node::{NodeElement, Widget};
+use crate::core::widget::{Widget, WidgetElement};
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics};
 use taffy::{AvailableSpace, Size, Style, prelude::length};
 
@@ -163,7 +163,7 @@ impl<Message> From<Text<Message>> for Widget<Message> {
         );
         let mut widget = Widget::new(
             next_id(),
-            NodeElement::Text {
+            WidgetElement::Text {
                 content: builder.content,
                 font_size: builder.font_size,
                 line_height: line_height,
