@@ -31,11 +31,7 @@ fn main() -> Result<(), Error> {
         text: "Guess what number".to_string(),
     };
 
-    start(app)
-        .title("Guess game")
-        .size(900, 900)
-        .vsync(false)
-        .run()
+    start(app).title("Guess game").size(900, 900).run()
 }
 
 struct Random {
