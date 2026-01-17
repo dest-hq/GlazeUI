@@ -93,10 +93,9 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         let swapchain_format = swapchain_capabilities.formats[0];
 
         let size = window.inner_size();
-        let mut surface_config = surface
+        let surface_config = surface
             .get_default_config(&adapter, size.width, size.height)
             .unwrap();
-        surface_config.alpha_mode = wgpu::CompositeAlphaMode::PreMultiplied;
         surface.configure(&device, &surface_config);
 
         let font_system = FontSystem::new();
