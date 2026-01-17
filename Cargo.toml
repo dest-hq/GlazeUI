@@ -1,8 +1,9 @@
 [package]
 name = "glazeui"
-version = "0.1.0"
-edition = "2024"
-license = "Apache-2.0"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 winit = "0.30.12"
@@ -19,10 +20,11 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "Apache-2.0"
+repository = "https://github.com/dest-hq/glazeui"
 
 [workspace.dependencies]
-glazeui = { version = "0.1.0", path = "." }
+glazeui = { version = "0.1.1", path = "." }
 winit = "0.30.12"

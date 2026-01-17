@@ -28,7 +28,7 @@ fn main() -> Result<(), Error> {
         number1: n1,
         number2: n2,
         number3: n3,
-        text: "Guess what number".to_string(),
+        text: "Guess the number".to_string(),
     };
 
     start(app).title("Guess game").size(900, 900).run()
