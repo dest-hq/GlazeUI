@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::core::node::{NodeElement, Widget};
+use crate::core::widget::{Widget, WidgetElement};
 use taffy::{Rect, Size, Style, prelude::length};
 
 use crate::widgets::utils::{types::Padding, ui_id::next_id};
@@ -86,7 +86,7 @@ impl<Message> From<Container<Message>> for Widget<Message> {
     fn from(builder: Container<Message>) -> Widget<Message> {
         let mut widget = Widget::new(
             next_id(),
-            NodeElement::Container {
+            WidgetElement::Container {
                 child: Box::new(builder.child),
                 width: builder.width,
                 height: builder.height,

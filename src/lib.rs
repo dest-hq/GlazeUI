@@ -1,9 +1,10 @@
 use std::sync::Arc;
 pub mod core;
+pub mod fps;
 pub mod layout;
 pub mod renderer;
 pub mod widgets;
-use core::app::App;
+use glyphon::FontSystem;
 use layout::LayoutEngine;
 use renderer::wgpu::WgpuCtx;
 use widgets::utils::ui_id::clear_counter;
@@ -13,10 +14,16 @@ use winit::{
     error::EventLoopError,
     event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
-    window::{Theme as WinitTheme, Window, WindowAttributes, WindowId},
+    window::{
+        Theme as WinitTheme, Window, WindowAttributes, WindowId, WindowLevel as WinitWindowLevel,
+    },
 };
 
-use crate::{core::node::NodeElement, layout::ResolvedLayout};
+use crate::{
+    core::{app::Application, widget::WidgetElement},
+    fps::FpsCounter,
+    layout::ResolvedLayout,
+};
 
 pub type Error = EventLoopError;
 
@@ -25,21 +32,29 @@ pub enum Theme {
     Light,
 }
 
+pub enum WindowLevel {
+    Normal,
+    AlwaysOnTop,
+    AlwaysOnBottom,
+}
+
 // Helper to start app
-pub fn start<A: App>(app: A) -> Run<A> {
+pub fn start<A: Application>(app: A) -> Run<A> {
     Run::new(app)
 }
 
-pub struct Run<A: App> {
+pub struct Run<A: Application> {
     app: A,
     window_settings: WindowAttributes,
+    vsync: bool,
 }
 
-impl<A: App> Run<A> {
+impl<A: Application> Run<A> {
     pub fn new(app: A) -> Self {
         Self {
             app: app,
             window_settings: WindowAttributes::default().with_title("GlazeUI"),
+            vsync: true,
         }
     }
 
@@ -78,6 +93,16 @@ impl<A: App> Run<A> {
         self
     }
 
+    pub fn level(mut self, level: WindowLevel) -> Self {
+        let level = match level {
+            WindowLevel::AlwaysOnBottom => WinitWindowLevel::AlwaysOnBottom,
+            WindowLevel::AlwaysOnTop => WinitWindowLevel::AlwaysOnTop,
+            WindowLevel::Normal => WinitWindowLevel::Normal,
+        };
+        self.window_settings = self.window_settings.with_window_level(level);
+        self
+    }
+
     pub fn blur(mut self, blur: bool) -> Self {
         self.window_settings = self.window_settings.with_blur(blur);
         self
@@ -98,6 +123,11 @@ impl<A: App> Run<A> {
         self
     }
 
+    pub fn vsync(mut self, vsync: bool) -> Self {
+        self.vsync = vsync;
+        self
+    }
+
     // The theme of titlebar
     pub fn theme(mut self, theme: Theme) -> Self {
         let theme = match theme {
@@ -112,15 +142,29 @@ impl<A: App> Run<A> {
     pub fn run(self) -> Result<(), Error> {
         let event_loop = EventLoop::new().unwrap();
 
-        event_loop.set_control_flow(ControlFlow::Wait);
+        match self.vsync {
+            true => event_loop.set_control_flow(ControlFlow::Wait),
+            false => event_loop.set_control_flow(ControlFlow::Poll),
+        }
+        let fps_counter = if self.vsync {
+            event_loop.set_control_flow(ControlFlow::Wait);
+            None
+        } else {
+            event_loop.set_control_flow(ControlFlow::Poll);
+            Some(FpsCounter::new())
+        };
 
         let mut window = UserWindow::<A> {
             window_settings: self.window_settings,
-            app: self.app,
             window: None,
             wgpu_ctx: None,
-            layout: None,
-            position: PhysicalPosition::new(0.0, 0.0),
+            user_app: UserApp {
+                app: self.app,
+                layout: None,
+                position: PhysicalPosition::new(0.0, 0.0),
+                font_system: Some(FontSystem::new()),
+                fps_counter: fps_counter,
+            },
         };
         match event_loop.run_app(&mut window) {
             Ok(()) => return Ok(()),
@@ -130,16 +174,23 @@ impl<A: App> Run<A> {
 }
 
 #[derive(Default)]
-struct UserWindow<'window, A: App> {
+struct UserApp<A: Application> {
+    app: A,
+    font_system: Option<FontSystem>,
+    position: PhysicalPosition<f64>,
+    layout: Option<LayoutEngine<A::Message>>,
+    fps_counter: Option<FpsCounter>,
+}
+
+#[derive(Default)]
+struct UserWindow<'window, A: Application> {
     window: Option<Arc<Window>>,
     wgpu_ctx: Option<WgpuCtx<'window, A::Message>>,
     window_settings: WindowAttributes,
-    app: A,
-    position: PhysicalPosition<f64>,
-    layout: Option<LayoutEngine<A::Message>>,
+    user_app: UserApp<A>,
 }
 
-impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
+impl<'window, A: Application> ApplicationHandler for UserWindow<'window, A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
             let win_attr = self.window_settings.clone();
@@ -151,6 +202,14 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
             self.window = Some(window.clone());
             let wgpu_ctx = WgpuCtx::new(window.clone());
             self.wgpu_ctx = Some(wgpu_ctx);
+        }
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        if event_loop.control_flow() == ControlFlow::Poll {
+            if let Some(window) = self.window.as_ref() {
+                window.request_redraw();
+            }
         }
     }
 
@@ -171,45 +230,58 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                 if let (Some(wgpu_ctx), Some(window)) =
                     (self.wgpu_ctx.as_mut(), self.window.as_ref())
                 {
+                    if let Some(fps_counter) = self.user_app.fps_counter.as_mut() {
+                        let fps = fps_counter.tick();
+                        println!("FPS: {:.1}", fps);
+                    }
                     let size = window.inner_size();
 
                     clear_counter();
 
-                    let mut layout: LayoutEngine<<A as App>::Message> = LayoutEngine::new();
-                    let element = self.app.view();
-                    layout.compute(&element.widget, size.width as f32, size.height as f32);
-                    wgpu_ctx.draw(&element.widget, &layout);
-                    self.layout = Some(layout);
+                    let mut layout: LayoutEngine<<A as Application>::Message> = LayoutEngine::new();
+                    let element = self.user_app.app.view();
+                    layout.compute(
+                        &element,
+                        size.width as f32,
+                        size.height as f32,
+                        &mut self.user_app.font_system,
+                    );
+                    if let Some(font_system) = self.user_app.font_system.as_mut() {
+                        wgpu_ctx.draw(&element, &layout, font_system);
+                    }
+                    self.user_app.layout = Some(layout);
                 }
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
                     if let Some(window) = self.window.as_ref() {
-                        if let Some(layout) = &self.layout {
+                        if let Some(layout) = &self.user_app.layout {
                             clear_counter();
-                            let widget = self.app.view();
-                            let layout_resolved = layout.layouts.get(&widget.widget.id).unwrap();
+                            let widget = self.user_app.app.view();
+                            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
 
-                            let clicked = check_clicked(layout_resolved, self.position);
+                            let clicked = check_clicked(layout_resolved, self.user_app.position);
 
                             if clicked {
-                                if let NodeElement::VStack { children, .. }
-                                | NodeElement::HStack { children, .. } = widget.widget.element
+                                if let WidgetElement::VStack { children, .. }
+                                | WidgetElement::HStack { children, .. } = widget.element
                                 {
                                     for child in children {
-                                        if let NodeElement::HStack { children, .. }
-                                        | NodeElement::VStack { children, .. } = child.element
+                                        if let WidgetElement::HStack { children, .. }
+                                        | WidgetElement::VStack { children, .. } = child.element
                                         {
                                             for child in children {
                                                 // Get widget information (position, width and height)
                                                 let layout_resolved =
                                                     layout.layouts.get(&child.id).unwrap();
                                                 // Check if the widget was clicked
-                                                let clicked =
-                                                    check_clicked(layout_resolved, self.position);
+                                                let clicked = check_clicked(
+                                                    layout_resolved,
+                                                    self.user_app.position,
+                                                );
                                                 if clicked {
                                                     if let Some(message) = child.on_click {
-                                                        self.app.update(message);
+                                                        self.user_app.app.update(message);
                                                         window.request_redraw();
                                                     }
                                                 }
@@ -220,25 +292,26 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                         let layout_resolved =
                                             layout.layouts.get(&child.id).unwrap();
                                         // Check if the widget was clicked
-                                        let clicked = check_clicked(layout_resolved, self.position);
+                                        let clicked =
+                                            check_clicked(layout_resolved, self.user_app.position);
                                         if clicked {
                                             if let Some(message) = child.on_click {
-                                                self.app.update(message);
+                                                self.user_app.app.update(message);
                                                 window.request_redraw();
                                             }
                                         }
                                     }
-                                } else if let NodeElement::Container { child, .. } =
-                                    widget.widget.element
+                                } else if let WidgetElement::Container { child, .. } =
+                                    widget.element
                                 {
                                     // Get widget information (position, width and height)
-                                    let layout_resolved =
-                                        layout.layouts.get(&widget.widget.id).unwrap();
+                                    let layout_resolved = layout.layouts.get(&widget.id).unwrap();
                                     // Check if the widget was clicked
-                                    let clicked = check_clicked(layout_resolved, self.position);
+                                    let clicked =
+                                        check_clicked(layout_resolved, self.user_app.position);
                                     if clicked {
                                         if let Some(message) = child.on_click {
-                                            self.app.update(message);
+                                            self.user_app.app.update(message);
                                             window.request_redraw();
                                         }
                                     } else {
@@ -248,10 +321,11 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                                         let layout_resolved =
                                             layout.layouts.get(&child.id).unwrap();
                                         // Check if the widget was clicked
-                                        let clicked = check_clicked(layout_resolved, self.position);
+                                        let clicked =
+                                            check_clicked(layout_resolved, self.user_app.position);
                                         if clicked {
                                             if let Some(message) = child.on_click {
-                                                self.app.update(message);
+                                                self.user_app.app.update(message);
                                                 window.request_redraw();
                                             }
                                         }
@@ -263,7 +337,7 @@ impl<'window, A: App> ApplicationHandler for UserWindow<'window, A> {
                 }
             }
             WindowEvent::CursorMoved { position, .. } => {
-                self.position = position;
+                self.user_app.position = position;
             }
             _ => (),
         }

@@ -1,9 +1,7 @@
-use std::marker::PhantomData;
-
-use crate::core::node::Widget;
+use crate::core::widget::Widget;
 
 // App implementation
-pub trait App {
+pub trait Application {
     /// Type of message
     type Message;
 
@@ -11,19 +9,5 @@ pub trait App {
     fn update(&mut self, message: Self::Message);
 
     /// Build the UI
-    fn view(&self) -> Element<Self::Message>;
-}
-
-pub struct Element<Message> {
-    pub widget: Widget<Message>,
-    _phantom: PhantomData<Message>,
-}
-
-impl<Message> Element<Message> {
-    pub fn new(widget: Widget<Message>) -> Self {
-        Self {
-            widget,
-            _phantom: PhantomData,
-        }
-    }
+    fn view(&self) -> Widget<Self::Message>;
 }

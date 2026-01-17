@@ -6,5 +6,4 @@ pub mod image;
 pub mod lib;
 pub mod renderer;
 pub mod shape;
-pub mod text;
 pub mod vertex;

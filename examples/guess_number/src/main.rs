@@ -1,6 +1,6 @@
 use glazeui::{
     Error,
-    core::app::{App, Element},
+    core::{app::Application, widget::Widget},
     hstack, start, vstack,
     widgets::{
         container::container,
@@ -31,11 +31,7 @@ fn main() -> Result<(), Error> {
         text: "Guess what number".to_string(),
     };
 
-    start(app)
-        .title("Guess game")
-        .size(900, 900)
-        .transparent(true)
-        .run()
+    start(app).title("Guess game").size(900, 900).run()
 }
 
 struct Random {
@@ -45,16 +41,16 @@ struct Random {
     text: String,
 }
 
-enum Messages {
+enum Message {
     Guess(i32),
 }
 
-impl App for Random {
-    type Message = Messages;
+impl Application for Random {
+    type Message = Message;
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            Messages::Guess(guess) => {
+            Message::Guess(guess) => {
                 if guess == self.number3 {
                     self.text = "You win, the game started again".to_string();
                 } else {
@@ -72,7 +68,7 @@ impl App for Random {
         }
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Widget<Self::Message> {
         let number = text("?").size(30).into();
 
         let mission = text(&self.text)
@@ -91,7 +87,7 @@ impl App for Random {
             .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
             .into(),
         )
-        .on_click(Messages::Guess(self.number1))
+        .on_click(Message::Guess(self.number1))
         .radius(20.0)
         .color(255, 255, 255, 1)
         .into();
@@ -107,19 +103,17 @@ impl App for Random {
             .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
             .into(),
         )
-        .on_click(Messages::Guess(self.number2))
+        .on_click(Message::Guess(self.number2))
         .radius(20.0)
         .color(255, 255, 255, 1)
         .into();
 
         let buttons = hstack!(button1, button2).spacing(20.0).into();
 
-        let layout = vstack!(number, mission, buttons)
+        vstack!(number, mission, buttons)
             .spacing(20.0)
             .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
             .vertical_align(glazeui::widgets::utils::types::VerticalAlign::Center)
-            .into();
-
-        Element::new(layout)
+            .into()
     }
 }

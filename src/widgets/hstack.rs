@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    core::node::{NodeElement, Widget},
+    core::widget::{Widget, WidgetElement},
     widgets::utils::types::{HorizontalAlign, VerticalAlign},
 };
 use taffy::{Dimension, Rect, Size, Style, prelude::length};
@@ -84,7 +84,7 @@ impl<Message> From<HStack<Message>> for Widget<Message> {
     fn from(builder: HStack<Message>) -> Widget<Message> {
         let mut widget = Widget {
             id: next_id(),
-            element: NodeElement::HStack {
+            element: WidgetElement::HStack {
                 spacing: builder.spacing,
                 children: builder.children,
             },
