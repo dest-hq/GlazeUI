@@ -89,36 +89,8 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             .await
             .expect("Failed to create device");
 
-        // let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        //     label: None,
-        //     bind_group_layouts: &[],
-        //     immediate_size: 0,
-        // });
-
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let swapchain_format = swapchain_capabilities.formats[0];
-
-        // let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        //     label: None,
-        //     layout: Some(&pipeline_layout),
-        //     vertex: wgpu::VertexState {
-        //         module: &shader,
-        //         entry_point: Some("vs_main"),
-        //         compilation_options: Default::default(),
-        //         buffers: &[],
-        //     },
-        //     fragment: Some(wgpu::FragmentState {
-        //         module: &shader,
-        //         entry_point: Some("fs_main"),
-        //         compilation_options: Default::default(),
-        //         targets: &[Some(swapchain_format.into())],
-        //     }),
-        //     primitive: wgpu::PrimitiveState::default(),
-        //     depth_stencil: None,
-        //     cache: None,
-        //     multiview_mask: None,
-        //     multisample: wgpu::MultisampleState::default(),
-        // });
 
         let size = window.inner_size();
         let mut surface_config = surface
@@ -148,10 +120,8 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         WgpuCtx {
             surface,
             surface_config,
-            // adapter,
             device,
             queue,
-            // render_pipeline,
             font_system,
             swash_cache,
             viewport: viewport,
@@ -175,7 +145,12 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         self.surface.configure(&self.device, &self.surface_config);
     }
 
-    pub fn draw(&mut self, element: &Widget<Message>, layout: &LayoutEngine<Message>) {
+    pub fn draw(
+        &mut self,
+        element: &Widget<Message>,
+        layout: &LayoutEngine<Message>,
+        font_system: &mut FontSystem,
+    ) {
         self.text_buffer.clear();
         self.text_positions.clear();
         self.viewport.update(
@@ -195,10 +170,10 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         self.collect_widgets(element, layout, &mut frame);
 
         // Render UI
-        self.render(frame);
+        self.render(frame, font_system);
     }
 
-    fn render(&mut self, frame: UiFrame) {
+    fn render(&mut self, frame: UiFrame, font_system: &mut FontSystem) {
         let surface_texture = self.surface.get_current_texture().unwrap();
         let texture_view = surface_texture.texture.create_view(&Default::default());
 
@@ -318,7 +293,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 .prepare(
                     &self.device,
                     &self.queue,
-                    &mut self.font_system,
+                    font_system,
                     &mut self.atlas,
                     &self.viewport,
                     text_areas,
