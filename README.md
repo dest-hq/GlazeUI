@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/glazeui.svg?style=flat-square&logo=rust)](https://crates.io/crates/glazeui)
 ![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square)
 
-> [!WARNING]  
+> WARNING
 > This is a work in progress, the API changes pretty often
 
 Cross-platform GUI library, written in Rust
