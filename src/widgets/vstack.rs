@@ -1,32 +1,71 @@
-use std::marker::PhantomData;
-
 use crate::{
-    core::widget::{Widget, WidgetElement},
-    widgets::utils::types::{HorizontalAlign, VerticalAlign},
+    core::{ui::Ui, widget::Widget},
+    types::{Align, Length},
 };
-use taffy::{Dimension, Rect, Size, Style, prelude::length};
 
-use crate::widgets::utils::{types::Padding, ui_id::next_id};
+use crate::types::Padding;
 
 // Helper to create vstack easier
 
 #[derive(Debug)]
-pub struct VStack<Message> {
-    _marker: PhantomData<Message>,
-    children: Vec<Widget<Message>>,
-    spacing: f32,
-    padding: Padding,
-    // id: Option<u64>,
-    horizontal_align: Option<HorizontalAlign>,
-    vertical_align: Option<VerticalAlign>,
+pub struct VStack<App> {
+    pub children: Vec<Widget<App>>,
+    pub spacing: f32,
+    pub padding: Padding,
+    pub align: Option<Align>,
+    pub length: Option<Length>,
 }
 
-impl<Message> VStack<Message> {
-    pub fn new(children: Vec<Widget<Message>>) -> Self {
+pub struct VStackHandle<'a, App> {
+    pub ui: &'a mut Ui<App>,
+    pub vstack: VStack<App>,
+}
+
+impl<'a, App> VStackHandle<'a, App> {
+    pub fn children(mut self, children: Vec<Widget<App>>) -> Self {
+        self.vstack.children = children;
+        self
+    }
+
+    pub fn child(mut self, child: Widget<App>) -> Self {
+        self.vstack.children.push(child);
+        self
+    }
+
+    pub fn align(mut self, align: Align) -> Self {
+        self.vstack.align = Some(align);
+        self
+    }
+
+    pub fn length(mut self, length: Length) -> Self {
+        self.vstack.length = Some(length);
+        self
+    }
+
+    pub fn spacing(mut self, spacing: f32) -> Self {
+        self.vstack.spacing = spacing;
+        self
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.vstack.padding = padding;
+        self
+    }
+
+    pub fn show(self) {
+        self.ui.push_vstack(self.vstack);
+    }
+
+    pub fn build(self) -> Widget<App> {
+        self.ui.build_vstack(self.vstack)
+    }
+}
+
+impl<App> VStack<App> {
+    pub fn new(children: Vec<Widget<App>>) -> Self {
         Self {
-            _marker: PhantomData,
             children,
-            spacing: 0.0,
+            spacing: 10.0,
             padding: Padding {
                 top: 0.0,
                 left: 0.0,
@@ -34,103 +73,8 @@ impl<Message> VStack<Message> {
                 bottom: 0.0,
             },
             // id: None,
-            horizontal_align: None,
-            vertical_align: None,
+            align: None,
+            length: None,
         }
-    }
-
-    pub fn vertical_align(mut self, vertical_align: VerticalAlign) -> Self {
-        self.vertical_align = Some(vertical_align);
-        self
-    }
-
-    pub fn horizontal_align(mut self, horizontal_align: HorizontalAlign) -> Self {
-        self.horizontal_align = Some(horizontal_align);
-        self
-    }
-
-    pub fn spacing(mut self, spacing: f32) -> Self {
-        self.spacing = spacing;
-        self
-    }
-
-    pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
-    }
-
-    // pub fn id(mut self, mut id: u64) -> Self {
-    //     if id < 1000 {
-    //         id = 1000 + id;
-    //         println!(
-    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-    //             id
-    //         );
-    //     }
-    //     self.id = Some(id);
-    //     self
-    // }
-}
-
-#[macro_export]
-macro_rules! vstack {
-    ($($child:expr),*) => {{
-        let children = vec![$($child),*];
-        glazeui::widgets::vstack::VStack::new(children)
-    }};
-}
-
-// Transform in widget
-impl<Message> From<VStack<Message>> for Widget<Message> {
-    fn from(builder: VStack<Message>) -> Widget<Message> {
-        let mut widget = Widget {
-            id: next_id(),
-            element: WidgetElement::VStack {
-                spacing: builder.spacing,
-                children: builder.children,
-            },
-            on_click: None,
-            style: Style::default(),
-        };
-        widget.style = Style {
-            display: taffy::Display::Flex,
-            flex_direction: taffy::FlexDirection::Column,
-            gap: taffy::Size {
-                width: length(0.0),
-                height: length(builder.spacing),
-            },
-            padding: Rect {
-                top: length(builder.padding.top),
-                left: length(builder.padding.left),
-                right: length(builder.padding.right),
-                bottom: length(builder.padding.bottom),
-            },
-            ..Default::default()
-        };
-        if let Some(vertical_align) = builder.vertical_align {
-            widget.style.align_items = Some(match vertical_align {
-                VerticalAlign::Top => taffy::AlignItems::Start,
-                VerticalAlign::Center => taffy::AlignItems::Center,
-                VerticalAlign::Bottom => taffy::AlignItems::End,
-            });
-
-            widget.style.size = Size {
-                width: Dimension::percent(1.0),
-                height: Dimension::percent(1.0),
-            };
-        }
-        if let Some(horizontal_align) = builder.horizontal_align {
-            widget.style.justify_content = Some(match horizontal_align {
-                HorizontalAlign::Left => taffy::JustifyContent::Start,
-                HorizontalAlign::Center => taffy::JustifyContent::Center,
-                HorizontalAlign::Right => taffy::JustifyContent::End,
-            });
-
-            widget.style.size = Size {
-                width: Dimension::percent(1.0),
-                height: Dimension::percent(1.0),
-            };
-        }
-        widget
     }
 }

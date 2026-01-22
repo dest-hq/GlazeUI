@@ -1,24 +1,19 @@
 use std::marker::PhantomData;
 
-use crate::core::widget::{Widget, WidgetElement};
-use taffy::{Size, Style, prelude::length};
+use crate::core::ui::Ui;
 
-use crate::widgets::utils::ui_id::next_id;
-
-pub struct Spacer<Message> {
-    _marker: PhantomData<Message>,
-    height: f32,
-    width: f32,
+pub struct Spacer<App> {
+    pub height: f32,
+    pub width: f32,
+    _marker: PhantomData<App>,
 }
 
-#[allow(dead_code)]
-
-// Helper to create spacer easier
-pub fn spacer<Message>() -> Spacer<Message> {
-    Spacer::new()
+pub struct SpacerHandler<'a, App> {
+    pub ui: &'a mut Ui<App>,
+    pub spacer: Spacer<App>,
 }
 
-impl<Message> Spacer<Message> {
+impl<App> Spacer<App> {
     pub fn new() -> Self {
         Self {
             height: 0.0,
@@ -26,37 +21,20 @@ impl<Message> Spacer<Message> {
             _marker: PhantomData,
         }
     }
+}
 
+impl<'a, App> SpacerHandler<'a, App> {
     pub fn width(mut self, width: f32) -> Self {
-        self.width = width;
+        self.spacer.width = width;
         self
     }
 
     pub fn height(mut self, height: f32) -> Self {
-        self.height = height;
+        self.spacer.height = height;
         self
     }
-}
 
-// Transform in Widget
-impl<Message> From<Spacer<Message>> for Widget<Message> {
-    fn from(builder: Spacer<Message>) -> Widget<Message> {
-        let mut widget = Widget {
-            id: next_id(),
-            element: WidgetElement::Spacer {
-                width: builder.width,
-                height: builder.height,
-            },
-            on_click: None,
-            style: Style::default(),
-        };
-        widget.style = Style {
-            size: Size {
-                width: length(builder.width),
-                height: length(builder.height),
-            },
-            ..Default::default()
-        };
-        widget
+    pub fn build(self) {
+        self.ui.push_spacer(self.spacer);
     }
 }

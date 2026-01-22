@@ -4,14 +4,14 @@ use crate::{
 };
 use glyphon::{Attrs, Buffer, FontSystem, Metrics, Shaping, Weight};
 use std::{collections::HashMap, marker::PhantomData};
-use taffy::{AvailableSpace, NodeId, Size, Style, TaffyTree, prelude::length};
+use taffy::{AvailableSpace, Dimension, NodeId, Size, Style, TaffyTree};
 
 #[derive(Debug)]
-pub struct LayoutEngine<Message> {
-    _marker: PhantomData<Message>,
+pub struct LayoutEngine<App> {
     pub taffy: TaffyTree,
     pub node_map: HashMap<u64, NodeId>,
     pub layouts: HashMap<u64, ResolvedLayout>,
+    _marker: PhantomData<App>,
 }
 
 #[derive(Debug)]
@@ -23,20 +23,20 @@ pub struct ResolvedLayout {
 }
 
 #[allow(clippy::new_without_default)]
-impl<Message> LayoutEngine<Message> {
+impl<App> LayoutEngine<App> {
     pub fn new() -> Self {
         Self {
-            _marker: PhantomData,
             taffy: TaffyTree::new(),
             node_map: HashMap::new(),
             layouts: HashMap::new(),
+            _marker: PhantomData,
         }
     }
 
     // Compute Layout
     pub fn compute(
         &mut self,
-        root: &Widget<Message>,
+        root: &Widget<App>,
         width: f32,
         height: f32,
         font_system: &mut Option<FontSystem>,
@@ -60,13 +60,7 @@ impl<Message> LayoutEngine<Message> {
         }
     }
 
-    fn resolve_node(
-        &mut self,
-        node: &Widget<Message>,
-        taffy_id: NodeId,
-        parent_x: f32,
-        parent_y: f32,
-    ) {
+    fn resolve_node(&mut self, node: &Widget<App>, taffy_id: NodeId, parent_x: f32, parent_y: f32) {
         let layout = self.taffy.layout(taffy_id).unwrap();
 
         let w = layout.size.width;
@@ -85,7 +79,7 @@ impl<Message> LayoutEngine<Message> {
             },
         );
 
-        let children: Vec<&Widget<Message>> = match &node.element {
+        let children: Vec<&Widget<App>> = match &node.element {
             WidgetElement::Container { child, .. } => vec![child],
             WidgetElement::VStack { children, .. } | WidgetElement::HStack { children, .. } => {
                 children.iter().collect()
@@ -99,7 +93,7 @@ impl<Message> LayoutEngine<Message> {
         }
     }
 
-    fn build_taffy_tree(&mut self, node: &Widget<Message>, font_system: &mut FontSystem) -> NodeId {
+    fn build_taffy_tree(&mut self, node: &Widget<App>, font_system: &mut FontSystem) -> NodeId {
         // Build children
         let child_ids: Vec<NodeId> = match &node.element {
             WidgetElement::Container { child, .. } => {
@@ -119,6 +113,7 @@ impl<Message> LayoutEngine<Message> {
             font_size,
             line_height,
             weight,
+            ..
         } = &node.element
         {
             let weight = match weight {
@@ -158,16 +153,13 @@ impl<Message> LayoutEngine<Message> {
                 font_system,
                 *line_height,
             );
-
-            let style: Style = Style {
+            Style {
                 size: Size {
-                    width: length(size.width),
-                    height: length(size.height),
+                    width: Dimension::length(size.width),
+                    height: Dimension::length(size.height),
                 },
                 ..Default::default()
-            };
-
-            style
+            }
         } else {
             node.style.clone()
         };
@@ -190,7 +182,7 @@ struct TextContext {
 }
 
 impl TextContext {
-    fn new(metrics: Metrics, text: &str, attrs: Attrs, font_system: &mut FontSystem) -> Self {
+    pub fn new(metrics: Metrics, text: &str, attrs: Attrs, font_system: &mut FontSystem) -> Self {
         let mut buffer = Buffer::new_empty(metrics);
         buffer.set_text(
             font_system,
@@ -202,7 +194,7 @@ impl TextContext {
         Self { buffer }
     }
 
-    fn measure(
+    pub fn measure(
         &mut self,
         known_dimensions: taffy::Size<Option<f32>>,
         available_space: taffy::Size<AvailableSpace>,

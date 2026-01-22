@@ -1,8 +1,7 @@
-use std::marker::PhantomData;
-
-use crate::core::widget::{Widget, WidgetElement};
-
-use crate::widgets::utils::ui_id::next_id;
+use crate::{
+    core::{ui::Ui, widget::Widget},
+    types::{Align, Color, Length},
+};
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone)]
@@ -20,57 +19,69 @@ pub enum TextWeight {
 
 // Helper to create text easier
 
-#[allow(dead_code)]
-pub fn text<Message>(content: &str) -> Text<Message> {
-    Text::new(content.to_string())
+pub struct Text {
+    pub content: String,
+    pub font_size: u32,
+    pub weight: TextWeight,
+    pub color: Color,
+    pub align: Option<Align>,
+    pub length: Option<Length>,
 }
 
-pub struct Text<Message> {
-    _marker: PhantomData<Message>,
-    content: String,
-    font_size: u32,
-    weight: TextWeight,
-    // id: Option<u64>,
-}
-
-impl<Message> Text<Message> {
+impl Text {
     pub fn new(content: String) -> Self {
         Self {
-            _marker: PhantomData,
             content: content,
             font_size: 14,
             weight: TextWeight::NORMAL,
-            // id: None,
+            color: Color::rgb(255, 255, 255),
+            align: None,
+            length: None,
         }
     }
+}
 
+pub struct TextHandle<'a, App> {
+    pub ui: &'a mut Ui<App>,
+    pub text: Text,
+}
+
+impl<'a, App> TextHandle<'a, App> {
     pub fn size(mut self, font_size: u32) -> Self {
-        self.font_size = font_size;
+        self.text.font_size = font_size;
+        self
+    }
+
+    pub fn center(mut self) -> Self {
+        self.text.align = Some(Align::Center);
+        self
+    }
+
+    pub fn align(mut self, align: Align) -> Self {
+        self.text.align = Some(align);
+        self
+    }
+
+    pub fn length(mut self, length: Length) -> Self {
+        self.text.length = Some(length);
+        self
+    }
+
+    pub fn color(mut self, color: Color) -> Self {
+        self.text.color = color;
         self
     }
 
     pub fn weight(mut self, weight: TextWeight) -> Self {
-        self.weight = weight;
+        self.text.weight = weight;
         self
     }
-}
 
-// Transform in widget
-impl<Message> From<Text<Message>> for Widget<Message> {
-    fn from(builder: Text<Message>) -> Widget<Message> {
-        // Get line height
-        let line_height = builder.font_size as f32 * 1.3;
+    pub fn show(self) {
+        self.ui.push_text(self.text);
+    }
 
-        let widget = Widget::new(
-            next_id(),
-            WidgetElement::Text {
-                content: builder.content,
-                font_size: builder.font_size,
-                line_height: line_height,
-                weight: builder.weight,
-            },
-            None,
-        );
-        widget
+    pub fn build(self) -> Widget<App> {
+        self.ui.build_text(self.text)
     }
 }

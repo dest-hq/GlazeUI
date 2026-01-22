@@ -1,36 +1,36 @@
-use std::marker::PhantomData;
+use std::{cell::RefCell, rc::Rc};
 
-use crate::core::widget::{Widget, WidgetElement};
-use taffy::{Rect, Size, Style, prelude::length};
+use crate::{
+    core::{ui::Ui, widget::Widget},
+    types::{Align, Color, Length},
+};
 
-use crate::widgets::utils::{types::Padding, ui_id::next_id};
+use crate::types::Padding;
 
-// Helper to create container easier
-
-#[allow(dead_code)]
-pub fn container<Message>(child: Widget<Message>) -> Container<Message> {
-    Container::new(child)
-}
-pub struct Container<Message> {
-    _marker: PhantomData<Message>,
-    child: Widget<Message>,
-    width: f32,
-    height: f32,
-    color: (u8, u8, u8, u8),
-    radius: f32,
-    padding: Padding,
-    // id: Option<u64>,
-    on_click: Option<Message>,
+pub struct Container<App> {
+    pub child: Widget<App>,
+    pub width: f32,
+    pub height: f32,
+    pub color: Color,
+    pub radius: f32,
+    pub padding: Padding,
+    pub align: Option<Align>,
+    pub length: Option<Length>,
+    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App)>>>,
 }
 
-impl<Message> Container<Message> {
-    pub fn new(child: Widget<Message>) -> Self {
+pub struct ContainerHandle<'a, App> {
+    pub ui: &'a mut Ui<App>,
+    pub container: Container<App>,
+}
+
+impl<App> Container<App> {
+    pub fn new(child: Widget<App>) -> Self {
         Self {
-            _marker: PhantomData,
             child,
             width: 100.0,
             height: 50.0,
-            color: (50, 50, 51, 255),
+            color: Color::rgb(50, 50, 51),
             radius: 0.0,
             padding: Padding {
                 top: 0.0,
@@ -39,75 +39,58 @@ impl<Message> Container<Message> {
                 bottom: 0.0,
             },
             // id: None,
+            align: None,
+            length: None,
             on_click: None,
         }
     }
+}
 
+impl<'a, App> ContainerHandle<'a, App> {
     pub fn size(mut self, width: f32, height: f32) -> Self {
-        self.width = width;
-        self.height = height;
+        self.container.width = width;
+        self.container.height = height;
         self
     }
 
-    pub fn color(mut self, r: u8, g: u8, b: u8, a: u8) -> Self {
-        self.color = (r, g, b, a);
+    pub fn color(mut self, color: Color) -> Self {
+        self.container.color = color;
         self
     }
 
-    // pub fn id(mut self, mut id: u64) -> Self {
-    //     if id < 1000 {
-    //         id = 1000 + id;
-    //         println!(
-    //             "It is recommended to set the ID above 1,000 to avoid conflicts with widgets where the ID is set automatically. The ID was set automatically: {}",
-    //             id
-    //         );
-    //     }
-    //     self.id = Some(id);
-    //     self
-    // }
+    pub fn align(mut self, align: Align) -> Self {
+        self.container.align = Some(align);
+        self
+    }
+
+    pub fn length(mut self, length: Length) -> Self {
+        self.container.length = Some(length);
+        self
+    }
 
     pub fn radius(mut self, corner_radius: f32) -> Self {
-        self.radius = corner_radius;
+        self.container.radius = corner_radius;
         self
     }
 
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
+        self.container.padding = padding;
         self
     }
-    pub fn on_click(mut self, message: Message) -> Self {
-        self.on_click = Some(message);
-        self
-    }
-}
 
-// Transform in Widget
-impl<Message> From<Container<Message>> for Widget<Message> {
-    fn from(builder: Container<Message>) -> Widget<Message> {
-        let mut widget = Widget::new(
-            next_id(),
-            WidgetElement::Container {
-                child: Box::new(builder.child),
-                width: builder.width,
-                height: builder.height,
-                color: builder.color,
-                radius: builder.radius,
-            },
-            builder.on_click,
-        );
-        widget.style = Style {
-            size: Size {
-                width: length(builder.width),
-                height: length(builder.height),
-            },
-            padding: Rect {
-                top: length(builder.padding.top),
-                left: length(builder.padding.left),
-                right: length(builder.padding.right),
-                bottom: length(builder.padding.bottom),
-            },
-            ..Default::default()
-        };
-        widget
+    pub fn on_click<F>(mut self, f: F) -> Self
+    where
+        F: FnMut(&mut App) + 'static,
+    {
+        self.container.on_click = Some(Rc::new(RefCell::new(f)));
+        self
+    }
+
+    pub fn show(self) {
+        self.ui.push_container(self.container);
+    }
+
+    pub fn build(self) -> Widget<App> {
+        self.ui.build_container(self.container)
     }
 }
