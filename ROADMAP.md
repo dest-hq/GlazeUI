@@ -13,7 +13,7 @@ v0.2.0
 
 v0.2.1
 - [ ] - Custom fonts
-- [ ] - Font fallback
+- [x] - Font fallback
 - [ ] - Font cache API
 
 v0.2.2
@@ -27,8 +27,5 @@ v0.3.0
 - [ ] - Async Support
 
 v0.4.0
-- [ ] - Add Skia Backend
-
-v0.4.1
 - [ ] - Mobile support
 - [ ] - Web Support
