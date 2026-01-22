@@ -965,6 +965,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hello_world"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+ "rand",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
