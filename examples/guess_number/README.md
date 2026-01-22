@@ -12,4 +12,4 @@ cargo run --release --package guess_number
 
 ## Screenshot
 
-<img width="500" height="500" alt="Screenshot From 2026-01-14 00-50-05" src="https://github.com/user-attachments/assets/c55dd94b-8005-4332-b4ba-4586c0ab7f62" />
+<img width="500" height="500" alt="Guess Game" src="https://github.com/user-attachments/assets/07ddb8eb-7921-42e3-8c18-27d9447f2e20" />
