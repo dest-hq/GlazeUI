@@ -4,6 +4,9 @@ version = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+description = { workspace = true }
 
 [dependencies]
 winit = "0.30.12"
@@ -24,7 +27,9 @@ version = "0.1.1"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/dest-hq/glazeui"
+categories = ["gui"]
+keywords = ["gui", "ui", "interface", "widgets"]
+description = "Cross-platform GUI library, written in Rust"
 
 [workspace.dependencies]
 glazeui = { version = "0.1.1", path = "." }
-winit = "0.30.12"

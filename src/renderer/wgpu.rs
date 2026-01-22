@@ -6,10 +6,9 @@ use crate::layout::LayoutEngine;
 use crate::renderer::components;
 use crate::{core::widget::Widget, widgets::text::TextWeight};
 use components::{
-    atlas::Atlas, lib::Area, lib::Color as canvasColor, lib::Item, lib::Shape, lib::ShapeType,
+    atlas::Atlas, lib::Area, lib::CanvasColor, lib::Item, lib::Shape, lib::ShapeType,
     renderer::Renderer,
 };
-
 use glyphon::{
     Attrs, Buffer, Cache, Color, FontSystem, Metrics, Resolution, SwashCache, TextArea, TextAtlas,
     TextBounds, TextRenderer, Viewport,
@@ -17,7 +16,7 @@ use glyphon::{
 use wgpu::{ExperimentalFeatures, MultisampleState};
 use winit::window::Window;
 
-pub struct WgpuCtx<'window, Message> {
+pub struct WgpuCtx<'window, App> {
     surface: wgpu::Surface<'window>,
     surface_config: wgpu::SurfaceConfiguration,
     device: wgpu::Device,
@@ -35,7 +34,7 @@ pub struct WgpuCtx<'window, Message> {
     // Shape
     shape_renderer: Renderer,
 
-    _marker: PhantomData<Message>,
+    _marker: PhantomData<App>,
 }
 
 pub struct UiFrame {
@@ -60,8 +59,8 @@ pub struct ShapeCommand {
     pub radius: f32,
 }
 
-impl<'window, Message> WgpuCtx<'window, Message> {
-    pub async fn new_async(window: Arc<Window>) -> WgpuCtx<'window, Message> {
+impl<'window, App> WgpuCtx<'window, App> {
+    pub async fn new_async(window: Arc<Window>) -> WgpuCtx<'window, App> {
         let instance = wgpu::Instance::default();
         let surface = instance.create_surface(Arc::clone(&window)).unwrap();
         let adapter = instance
@@ -112,7 +111,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         let shape_renderer = Renderer::new(
             &device,
             &surface_config.format,
-            wgpu::MultisampleState::default(),
+            MultisampleState::default(),
             None,
         );
 
@@ -133,7 +132,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
         }
     }
 
-    pub fn new(window: Arc<Window>) -> WgpuCtx<'window, Message> {
+    pub fn new(window: Arc<Window>) -> WgpuCtx<'window, App> {
         pollster::block_on(WgpuCtx::new_async(window))
     }
 
@@ -146,8 +145,8 @@ impl<'window, Message> WgpuCtx<'window, Message> {
 
     pub fn draw(
         &mut self,
-        element: &Widget<Message>,
-        layout: &LayoutEngine<Message>,
+        element: &Widget<App>,
+        layout: &LayoutEngine<App>,
         font_system: &mut FontSystem,
     ) {
         self.text_buffer.clear();
@@ -192,7 +191,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                             r: 0.0,
                             g: 0.0,
                             b: 0.0,
-                            a: 1.0,
+                            a: 0.9,
                         }),
                         store: wgpu::StoreOp::Store,
                     },
@@ -232,7 +231,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                         0.0, // This is responsible for setting how much it is flipped
                         radius.min(width * 0.5).min(height * 0.5),
                     ),
-                    color: canvasColor(*r, *g, *b, *a),
+                    color: CanvasColor(*r, *g, *b, *a),
                 }),
             ));
         }
@@ -268,26 +267,26 @@ impl<'window, Message> WgpuCtx<'window, Message> {
 
         // 3. Text
 
-        let mut text_areas = Vec::new();
+        if !frame.texts.is_empty() {
+            let mut text_areas = Vec::new();
 
-        for (idx, (x, y, width, height)) in self.text_positions.iter().enumerate() {
-            text_areas.push(TextArea {
-                buffer: &self.text_buffer[idx],
-                left: *x,
-                top: *y,
-                scale: 1.0,
-                bounds: TextBounds {
-                    left: *x as i32,
-                    top: *y as i32,
-                    right: (*x + *width) as i32,
-                    bottom: (*y + *height) as i32,
-                },
-                default_color: Color::rgb(255, 255, 255),
-                custom_glyphs: &[],
-            });
-        }
+            for (idx, (x, y, width, height)) in self.text_positions.iter().enumerate() {
+                text_areas.push(TextArea {
+                    buffer: &self.text_buffer[idx],
+                    left: *x,
+                    top: *y,
+                    scale: 1.0,
+                    bounds: TextBounds {
+                        left: *x as i32,
+                        top: *y as i32,
+                        right: (*x + *width) as i32,
+                        bottom: (*y + *height) as i32,
+                    },
+                    default_color: frame.texts[idx].color,
+                    custom_glyphs: &[],
+                });
+            }
 
-        if !frame.texts.is_empty() && !text_areas.is_empty() {
             self.text_renderer
                 .prepare(
                     &self.device,
@@ -329,8 +328,8 @@ impl<'window, Message> WgpuCtx<'window, Message> {
 
     fn collect_widgets(
         &mut self,
-        widget: &Widget<Message>,
-        layout: &LayoutEngine<Message>,
+        widget: &Widget<App>,
+        layout: &LayoutEngine<App>,
         frame: &mut UiFrame,
     ) {
         if let WidgetElement::Text {
@@ -338,6 +337,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
             font_size,
             line_height,
             weight,
+            color,
         } = &widget.element
         {
             let weight = match weight {
@@ -365,11 +365,10 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 None,
             );
             text_buffer.shape_until_scroll(&mut self.font_system, false);
+            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
 
             // Push text buffer to vec
             self.text_buffer.push(text_buffer);
-
-            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
 
             self.text_positions.push((
                 layout_resolved.x,
@@ -390,7 +389,7 @@ impl<'window, Message> WgpuCtx<'window, Message> {
                 left: layout_resolved.x,
                 top: layout_resolved.y,
                 bounds: bounds,
-                color: Color::rgb(255, 255, 255),
+                color: Color::rgba(color.0, color.1, color.2, color.3),
             });
         }
 

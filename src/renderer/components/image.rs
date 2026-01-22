@@ -9,10 +9,12 @@ use wgpu::{
 
 use super::buffer::{DynamicBuffer, DynamicBufferDescriptor};
 
-use crate::renderer::components::{lib::Area, lib::Color, lib::ShapeType, atlas::ImageAtlas};
+use crate::renderer::components::{
+    atlas::ImageAtlas, lib::Area, lib::CanvasColor as Color, lib::ShapeType,
+};
+use image::RgbaImage;
 use std::collections::HashMap;
 use std::sync::Arc;
-use image::RgbaImage;
 
 use super::vertex::{ImageVertex, RoundedRectangleVertex, ShapeVertex, Vertex};
 

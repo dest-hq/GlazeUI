@@ -1,12 +1,26 @@
 use glazeui::{
     Error,
-    core::{app::Application, widget::Widget},
-    hstack, start, vstack,
-    widgets::{
-        container::container,
-        text::{self, text},
-    },
+    core::ui::Ui,
+    start,
+    types::{Align, Length},
+    widgets::text::TextWeight,
 };
+
+fn main() -> Result<(), Error> {
+    let (n1, n2, n3) = generate_numbers();
+
+    let app = Random {
+        number1: n1,
+        number2: n2,
+        number3: n3,
+        text: "Guess the number".to_string(),
+    };
+
+    start(app, Random::view)
+        .title("Guess game")
+        .size(900, 900)
+        .run()
+}
 
 fn generate_numbers() -> (i32, i32, i32) {
     let a = rand::random_range(1..=100);
@@ -21,19 +35,6 @@ fn generate_numbers() -> (i32, i32, i32) {
     }
 }
 
-fn main() -> Result<(), Error> {
-    let (n1, n2, n3) = generate_numbers();
-
-    let app = Random {
-        number1: n1,
-        number2: n2,
-        number3: n3,
-        text: "Guess the number".to_string(),
-    };
-
-    start(app).title("Guess game").size(900, 900).run()
-}
-
 struct Random {
     number1: i32,
     number2: i32,
@@ -41,79 +42,51 @@ struct Random {
     text: String,
 }
 
-enum Message {
-    Guess(i32),
-}
-
-impl Application for Random {
-    type Message = Message;
-
-    fn update(&mut self, message: Self::Message) {
-        match message {
-            Message::Guess(guess) => {
-                if guess == self.number3 {
-                    self.text = "You win, the game started again".to_string();
-                } else {
-                    self.text = format!(
-                        "You lose, the game started again (the number was {})",
-                        self.number3
-                    );
-                }
-
-                let (n1, n2, n3) = generate_numbers();
-                self.number1 = n1;
-                self.number2 = n2;
-                self.number3 = n3;
-            }
+impl Random {
+    fn verify(&mut self, guess: i32) {
+        if guess == self.number3 {
+            self.text = "You win, the game started again".to_string();
+        } else {
+            self.text = format!(
+                "You lose, the game started again (the number was {})",
+                self.number3
+            );
         }
+
+        let (n1, n2, n3) = generate_numbers();
+        self.number1 = n1;
+        self.number2 = n2;
+        self.number3 = n3;
     }
 
-    fn view(&self) -> Widget<Self::Message> {
-        let number = text("?").size(30).into();
-
-        let mission = text(&self.text)
+    fn view(&mut self, ui: &mut Ui<Random>) {
+        let number = ui.text("?").size(30).build();
+        let mission = ui
+            .text(&self.text)
             .size(20)
-            .weight(text::TextWeight::LIGHT)
-            .into();
+            .weight(TextWeight::LIGHT)
+            .build();
+        let button1 = ui
+            .button(&self.number1.to_string())
+            .label_size(20)
+            .on_click(|app: &mut Random| {
+                app.verify(app.number1);
+            })
+            .build();
+        let button2 = ui
+            .button(&self.number2.to_string())
+            .label_size(20)
+            .on_click(|app: &mut Random| {
+                app.verify(app.number2);
+            })
+            .build();
 
-        let button1 = container(
-            vstack!(
-                text(&self.number1.to_string())
-                    .size(20)
-                    .weight(text::TextWeight::NORMAL)
-                    .into()
-            )
-            .vertical_align(glazeui::widgets::utils::types::VerticalAlign::Center)
-            .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
-            .into(),
-        )
-        .on_click(Message::Guess(self.number1))
-        .radius(20.0)
-        .color(255, 255, 255, 1)
-        .into();
+        let hstack1 = ui.hstack(vec![button1, button2]).spacing(20.0).build();
 
-        let button2 = container(
-            vstack!(
-                text(&self.number2.to_string())
-                    .size(20)
-                    .weight(text::TextWeight::NORMAL)
-                    .into()
-            )
-            .vertical_align(glazeui::widgets::utils::types::VerticalAlign::Center)
-            .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
-            .into(),
-        )
-        .on_click(Message::Guess(self.number2))
-        .radius(20.0)
-        .color(255, 255, 255, 1)
-        .into();
-
-        let buttons = hstack!(button1, button2).spacing(20.0).into();
-
-        vstack!(number, mission, buttons)
+        ui.vstack(vec![number, mission, hstack1])
             .spacing(20.0)
-            .horizontal_align(glazeui::widgets::utils::types::HorizontalAlign::Center)
-            .vertical_align(glazeui::widgets::utils::types::VerticalAlign::Center)
-            .into()
+            .align(Align::Center)
+            .length(Length::Fill)
+            .show();
     }
 }

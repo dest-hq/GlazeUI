@@ -7,7 +7,7 @@ use wgpu::{
 };
 
 use super::vertex::{ColorVertex, RoundedRectangleVertex, ShapeVertex, Vertex};
-use crate::renderer::components::{lib::Area, lib::Color, lib::ShapeType};
+use crate::renderer::components::{lib::Area, lib::CanvasColor as Color, lib::ShapeType};
 
 pub struct ColorRenderer {
     ellipse_renderer: GenericColorRenderer,

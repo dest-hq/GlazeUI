@@ -2,7 +2,7 @@
 
 use wgpu::{BufferAddress, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 
-use crate::renderer::components::{shape::Shape, lib::Area, lib::Color};
+use crate::renderer::components::{lib::Area, lib::CanvasColor as Color, shape::Shape};
 use image::RgbaImage;
 use std::sync::Arc;
 
