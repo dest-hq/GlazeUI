@@ -19,7 +19,7 @@ image = "0.25.9"
 
 [workspace]
 members = [
-    "examples/*",
+    "examples/*"
 ]
 
 [workspace.package]

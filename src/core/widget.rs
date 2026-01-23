@@ -1,5 +1,5 @@
 use crate::Window;
-use crate::widgets::text::TextWeight;
+use crate::types::TextWeight;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -37,7 +37,7 @@ impl<App> Clone for Widget<App> {
             id: self.id,
             element: self.element.clone(),
             style: self.style.clone(),
-            on_click: None,
+            on_click: self.on_click.clone(),
         }
     }
 }

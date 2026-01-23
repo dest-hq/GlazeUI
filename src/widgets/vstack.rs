@@ -1,11 +1,16 @@
 use crate::{
-    core::{ui::Ui, widget::Widget},
-    types::{Align, Length},
+    core::widget::Widget,
+    types::{Align, Length, Padding},
+    widgets::ui::build_vstack,
 };
 
-use crate::types::Padding;
-
-// Helper to create vstack easier
+#[macro_export]
+macro_rules! vstack {
+    ($($child:expr),*) => {{
+        let children = vec![$($child),*];
+        glazeui::widgets::vstack::VStack::new(children)
+    }};
+}
 
 #[derive(Debug)]
 pub struct VStack<App> {
@@ -14,51 +19,6 @@ pub struct VStack<App> {
     pub padding: Padding,
     pub align: Option<Align>,
     pub length: Option<Length>,
-}
-
-pub struct VStackHandle<'a, App> {
-    pub ui: &'a mut Ui<App>,
-    pub vstack: VStack<App>,
-}
-
-impl<'a, App> VStackHandle<'a, App> {
-    pub fn children(mut self, children: Vec<Widget<App>>) -> Self {
-        self.vstack.children = children;
-        self
-    }
-
-    pub fn child(mut self, child: Widget<App>) -> Self {
-        self.vstack.children.push(child);
-        self
-    }
-
-    pub fn align(mut self, align: Align) -> Self {
-        self.vstack.align = Some(align);
-        self
-    }
-
-    pub fn length(mut self, length: Length) -> Self {
-        self.vstack.length = Some(length);
-        self
-    }
-
-    pub fn spacing(mut self, spacing: f32) -> Self {
-        self.vstack.spacing = spacing;
-        self
-    }
-
-    pub fn padding(mut self, padding: Padding) -> Self {
-        self.vstack.padding = padding;
-        self
-    }
-
-    pub fn show(self) {
-        self.ui.push_vstack(self.vstack);
-    }
-
-    pub fn build(self) -> Widget<App> {
-        self.ui.build_vstack(self.vstack)
-    }
 }
 
 impl<App> VStack<App> {
@@ -76,5 +36,39 @@ impl<App> VStack<App> {
             align: None,
             length: None,
         }
+    }
+
+    pub fn extend(mut self, children: Vec<Widget<App>>) -> Self {
+        self.children = children;
+        self
+    }
+
+    pub fn child(mut self, child: Widget<App>) -> Self {
+        self.children.push(child);
+        self
+    }
+
+    pub fn align(mut self, align: Align) -> Self {
+        self.align = Some(align);
+        self
+    }
+
+    pub fn length(mut self, length: Length) -> Self {
+        self.length = Some(length);
+        self
+    }
+
+    pub fn spacing(mut self, spacing: f32) -> Self {
+        self.spacing = spacing;
+        self
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    pub fn build(self) -> Widget<App> {
+        build_vstack(self)
     }
 }

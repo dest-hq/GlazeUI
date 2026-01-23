@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use crate::core::layout::LayoutEngine;
 use crate::core::widget::WidgetElement;
-use crate::layout::LayoutEngine;
 use crate::renderer::components;
 use crate::types::Backend;
-use crate::{core::widget::Widget, widgets::text::TextWeight};
+use crate::{core::widget::Widget, types::TextWeight};
 use components::{
     atlas::Atlas, lib::Area, lib::CanvasColor, lib::Item, lib::Shape, lib::ShapeType,
     renderer::Renderer,
@@ -356,13 +356,13 @@ impl<'window, App> WgpuCtx<'window, App> {
         {
             let weight = match weight {
                 TextWeight::THIN => 100,
-                TextWeight::EXTRA_LIGHT => 200,
+                TextWeight::EXTRALIGHT => 200,
                 TextWeight::LIGHT => 300,
                 TextWeight::NORMAL => 400,
                 TextWeight::MEDIUM => 500,
                 TextWeight::SEMIBOLD => 600,
                 TextWeight::BOLD => 700,
-                TextWeight::EXTRA_BOLD => 800,
+                TextWeight::EXTRABOLD => 800,
                 TextWeight::BLACK => 900,
             };
             let mut text_buffer = Buffer::new(

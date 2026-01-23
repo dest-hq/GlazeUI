@@ -1,34 +1,28 @@
+use std::marker::PhantomData;
+
 use crate::{
-    core::{ui::Ui, widget::Widget},
-    types::{Align, Color, Length},
+    core::widget::Widget,
+    types::{Align, Color, Length, TextWeight},
+    widgets::ui::build_text,
 };
 
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone)]
-pub enum TextWeight {
-    THIN,        // 100
-    EXTRA_LIGHT, // 200
-    LIGHT,       // 300
-    NORMAL,      // 400,
-    MEDIUM,      // 500
-    SEMIBOLD,    // 600
-    BOLD,        // 700
-    EXTRA_BOLD,  // 800
-    BLACK,       // 900
+pub fn text<App>(content: &str) -> Text<App> {
+    Text::new(content.to_string())
 }
 
 // Helper to create text easier
 
-pub struct Text {
+pub struct Text<App> {
     pub content: String,
     pub font_size: u32,
     pub weight: TextWeight,
     pub color: Color,
     pub align: Option<Align>,
     pub length: Option<Length>,
+    _marker: PhantomData<App>,
 }
 
-impl Text {
+impl<App> Text<App> {
     pub fn new(content: String) -> Self {
         Self {
             content: content,
@@ -37,51 +31,41 @@ impl Text {
             color: Color::rgb(255, 255, 255),
             align: None,
             length: None,
+            _marker: PhantomData,
         }
     }
-}
 
-pub struct TextHandle<'a, App> {
-    pub ui: &'a mut Ui<App>,
-    pub text: Text,
-}
-
-impl<'a, App> TextHandle<'a, App> {
     pub fn size(mut self, font_size: u32) -> Self {
-        self.text.font_size = font_size;
+        self.font_size = font_size;
         self
     }
 
     pub fn center(mut self) -> Self {
-        self.text.align = Some(Align::Center);
+        self.align = Some(Align::Center);
         self
     }
 
     pub fn align(mut self, align: Align) -> Self {
-        self.text.align = Some(align);
+        self.align = Some(align);
         self
     }
 
     pub fn length(mut self, length: Length) -> Self {
-        self.text.length = Some(length);
+        self.length = Some(length);
         self
     }
 
     pub fn color(mut self, color: Color) -> Self {
-        self.text.color = color;
+        self.color = color;
         self
     }
 
     pub fn weight(mut self, weight: TextWeight) -> Self {
-        self.text.weight = weight;
+        self.weight = weight;
         self
     }
 
-    pub fn show(self) {
-        self.ui.push_text(self.text);
-    }
-
     pub fn build(self) -> Widget<App> {
-        self.ui.build_text(self.text)
+        build_text(self)
     }
 }
