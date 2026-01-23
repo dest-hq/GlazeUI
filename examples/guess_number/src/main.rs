@@ -1,9 +1,10 @@
 use glazeui::{
     Error, Window,
-    core::ui::Ui,
-    start,
-    types::{Align, Length},
-    widgets::text::TextWeight,
+    core::widget::Widget,
+    hstack, start,
+    types::{Align, Length, TextWeight},
+    vstack,
+    widgets::{button::button, text::text},
 };
 
 fn main() -> Result<(), Error> {
@@ -59,34 +60,28 @@ impl Random {
         self.number3 = n3;
     }
 
-    fn view(&mut self, ui: &mut Ui<Random>) {
-        let number = ui.text("?").size(30).build();
-        let mission = ui
-            .text(&self.text)
-            .size(20)
-            .weight(TextWeight::LIGHT)
-            .build();
-        let button1 = ui
-            .button(&self.number1.to_string())
+    fn view(&mut self) -> Widget<Random> {
+        let number = text("?").size(30).build();
+        let mission = text(&self.text).size(20).weight(TextWeight::LIGHT).build();
+        let button1 = button(&self.number1.to_string())
             .label_size(20)
             .on_click(|app: &mut Random, _window: &mut Window| {
                 app.verify(app.number1);
             })
             .build();
-        let button2 = ui
-            .button(&self.number2.to_string())
+        let button2 = button(&self.number2.to_string())
             .label_size(20)
             .on_click(|app: &mut Random, _window: &mut Window| {
                 app.verify(app.number2);
             })
             .build();
 
-        let hstack1 = ui.hstack(vec![button1, button2]).spacing(20.0).build();
+        let hstack1 = hstack!(button1, button2).spacing(20.0).build();
 
-        ui.vstack(vec![number, mission, hstack1])
+        vstack!(number, mission, hstack1)
             .spacing(20.0)
             .align(Align::Center)
             .length(Length::Fill)
-            .show();
+            .build()
     }
 }

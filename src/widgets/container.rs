@@ -2,11 +2,14 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     Window,
-    core::{ui::Ui, widget::Widget},
-    types::{Align, Color, Length},
+    core::widget::Widget,
+    types::{Align, Color, Length, Padding},
+    widgets::ui::build_container,
 };
 
-use crate::types::Padding;
+pub fn container<App>(child: Widget<App>) -> Container<App> {
+    Container::new(child)
+}
 
 pub struct Container<App> {
     pub child: Widget<App>,
@@ -18,11 +21,6 @@ pub struct Container<App> {
     pub align: Option<Align>,
     pub length: Option<Length>,
     pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
-}
-
-pub struct ContainerHandle<'a, App> {
-    pub ui: &'a mut Ui<App>,
-    pub container: Container<App>,
 }
 
 impl<App> Container<App> {
@@ -45,37 +43,35 @@ impl<App> Container<App> {
             on_click: None,
         }
     }
-}
 
-impl<'a, App> ContainerHandle<'a, App> {
     pub fn size(mut self, width: f32, height: f32) -> Self {
-        self.container.width = width;
-        self.container.height = height;
+        self.width = width;
+        self.height = height;
         self
     }
 
     pub fn color(mut self, color: Color) -> Self {
-        self.container.color = color;
+        self.color = color;
         self
     }
 
     pub fn align(mut self, align: Align) -> Self {
-        self.container.align = Some(align);
+        self.align = Some(align);
         self
     }
 
     pub fn length(mut self, length: Length) -> Self {
-        self.container.length = Some(length);
+        self.length = Some(length);
         self
     }
 
     pub fn radius(mut self, corner_radius: f32) -> Self {
-        self.container.radius = corner_radius;
+        self.radius = corner_radius;
         self
     }
 
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.container.padding = padding;
+        self.padding = padding;
         self
     }
 
@@ -83,15 +79,11 @@ impl<'a, App> ContainerHandle<'a, App> {
     where
         F: FnMut(&mut App, &mut Window) + 'static,
     {
-        self.container.on_click = Some(Rc::new(RefCell::new(f)));
+        self.on_click = Some(Rc::new(RefCell::new(f)));
         self
     }
 
-    pub fn show(self) {
-        self.ui.push_container(self.container);
-    }
-
     pub fn build(self) -> Widget<App> {
-        self.ui.build_container(self.container)
+        build_container(self)
     }
 }

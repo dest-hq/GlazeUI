@@ -1,4 +1,4 @@
-use glazeui::{Error, core::ui::Ui, start};
+use glazeui::{Error, core::widget::Widget, start, vstack, widgets::text::text};
 
 fn main() -> Result<(), Error> {
     let app = HelloWorld {
@@ -19,15 +19,14 @@ struct HelloWorld {
 }
 
 impl HelloWorld {
-    fn view(&mut self, ui: &mut Ui<HelloWorld>) {
-        let hello_world_text = ui
-            .text(&self.text)
+    fn view(&mut self) -> Widget<HelloWorld> {
+        let hello_world_text = text(&self.text)
             .size(36) // Set text size to 36 pixels
             .build(); // Turn text element into Widget
 
-        ui.vstack(vec![hello_world_text]) // VStack is used to vertically stack multiple elements vertically, but since we have only 1 element a HStack could also be used here
+        vstack!(hello_world_text) // VStack is used to vertically stack multiple elements vertically, but since we have only 1 element a HStack could also be used here
             .align(glazeui::types::Align::Center)
             .length(glazeui::types::Length::Fill) // Fill all the space
-            .show() // Turn VStack to Widget
+            .build() // Turn VStack to Widget
     }
 }

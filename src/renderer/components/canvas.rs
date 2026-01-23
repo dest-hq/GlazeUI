@@ -12,7 +12,7 @@ use wgpu::{
 
 use std::sync::Arc;
 
-use crate::renderer::components::{lib::Area, atlas::Atlas, lib::Item, renderer::Renderer};
+use crate::renderer::components::{atlas::Atlas, lib::Area, lib::Item, renderer::Renderer};
 
 const SAMPLE_COUNT: u32 = 4;
 

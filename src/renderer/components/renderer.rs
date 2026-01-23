@@ -1,7 +1,7 @@
 use wgpu::{DepthStencilState, Device, MultisampleState, Queue, RenderPass, TextureFormat};
 
-use crate::renderer::components::{image::ImageRenderer, lib::Area, lib::Item,
-color::ColorRenderer, atlas::Atlas
+use crate::renderer::components::{
+    atlas::Atlas, color::ColorRenderer, image::ImageRenderer, lib::Area, lib::Item,
 };
 
 pub struct Renderer {

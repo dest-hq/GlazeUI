@@ -1,12 +1,11 @@
-use std::{marker::PhantomData, sync::Arc};
+use glyphon::FontSystem;
 pub mod core;
-pub mod layout;
 pub mod renderer;
 pub mod types;
 pub mod widgets;
-use glyphon::FontSystem;
-use layout::LayoutEngine;
+use core::layout::LayoutEngine;
 use renderer::wgpu::WgpuCtx;
+use std::{marker::PhantomData, sync::Arc};
 use widgets::utils::ui_id::clear_counter;
 use winit::{
     application::ApplicationHandler,
@@ -21,8 +20,8 @@ use winit::{
 };
 
 use crate::{
-    core::{ui::Ui, widget::WidgetElement},
-    layout::ResolvedLayout,
+    core::layout::ResolvedLayout,
+    core::widget::{Widget, WidgetElement},
     types::{Backend, Color, Theme, UserAttention, WindowLevel},
 };
 
@@ -80,7 +79,7 @@ impl<'window> Window<'window> {
 }
 
 // Helper to start app
-pub fn start<App>(app: App, view_fn: fn(&mut App, &mut Ui<App>)) -> Run<App> {
+pub fn start<App>(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Run<App> {
     Run::new(app, view_fn)
 }
 
@@ -88,14 +87,14 @@ pub struct Run<App> {
     app: App,
     window_settings: WindowAttributes,
     vsync: bool,
-    view_fn: fn(&mut App, &mut Ui<App>),
+    view_fn: fn(&mut App) -> Widget<App>,
     backend: Backend,
     background: Color,
     _marker: PhantomData<App>,
 }
 
 impl<App> Run<App> {
-    pub fn new(app: App, view_fn: fn(&mut App, &mut Ui<App>)) -> Self {
+    pub fn new(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Self {
         Self {
             app: app,
             window_settings: WindowAttributes::default().with_title("GlazeUI"),
@@ -230,7 +229,7 @@ impl<App> Run<App> {
 #[derive(Default)]
 struct UserApp<App> {
     app: App,
-    view_fn: Option<fn(&mut App, &mut Ui<App>)>,
+    view_fn: Option<fn(&mut App) -> Widget<App>>,
     background: Color,
     font_system: Option<FontSystem>,
     position: PhysicalPosition<f64>,
@@ -288,135 +287,122 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                 }
             }
             WindowEvent::RedrawRequested => {
-                if let (Some(wgpu_ctx), Some(window)) =
-                    (self.wgpu_ctx.as_mut(), self.window.as_ref())
-                {
+                if let (Some(wgpu_ctx), Some(window), Some(view)) = (
+                    self.wgpu_ctx.as_mut(),
+                    self.window.as_ref(),
+                    self.user_app.view_fn.as_ref(),
+                ) {
                     let size = window.inner_size();
 
                     clear_counter();
 
                     let mut layout = LayoutEngine::new();
-                    let mut ui = Ui::new();
-                    let _view = self.user_app.view_fn.unwrap();
-                    _view(&mut self.user_app.app, &mut ui);
+                    let ui = view(&mut self.user_app.app);
 
                     // Create vstack widget that will contain all widgets
                     // Like if you write at widgets .show() it will be automatic put in vstack
                     //
 
                     layout.compute(
-                        &ui.widgets[0],
+                        &ui,
                         size.width as f32,
                         size.height as f32,
                         &mut self.user_app.font_system,
                     );
                     if let Some(font_system) = self.user_app.font_system.as_mut() {
-                        wgpu_ctx.draw(
-                            &&ui.widgets[0],
-                            &layout,
-                            font_system,
-                            self.user_app.background,
-                        );
+                        wgpu_ctx.draw(&&ui, &layout, font_system, self.user_app.background);
                     }
                     self.user_app.layout = Some(layout);
                 }
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
-                    if let Some(window) = self.window.as_ref() {
-                        if let Some(layout) = &self.user_app.layout {
-                            clear_counter();
-                            let mut ui = Ui::new();
-                            let _view = self.user_app.view_fn.unwrap();
-                            _view(&mut self.user_app.app, &mut ui);
-                            let mut user_window = Window {
-                                window: self.window.as_ref().unwrap().clone(),
-                                background: &mut self.user_app.background,
-                                eventloop: event_loop,
-                            };
-                            let layout_resolved = layout.layouts.get(&ui.widgets[0].id).unwrap();
+                    if let (Some(window), Some(view), Some(layout)) = (
+                        self.window.as_ref(),
+                        self.user_app.view_fn.as_ref(),
+                        self.user_app.layout.as_ref(),
+                    ) {
+                        clear_counter();
+                        let ui = view(&mut self.user_app.app);
+                        let mut user_window = Window {
+                            window: self.window.as_ref().unwrap().clone(),
+                            background: &mut self.user_app.background,
+                            eventloop: event_loop,
+                        };
+                        let layout_resolved = layout.layouts.get(&ui.id).unwrap();
 
-                            let clicked = check_clicked(layout_resolved, self.user_app.position);
+                        let clicked = check_clicked(layout_resolved, self.user_app.position);
 
-                            if clicked {
-                                if let WidgetElement::VStack { children, .. }
-                                | WidgetElement::HStack { children, .. } = &ui.widgets[0].element
-                                {
-                                    for child in children {
-                                        if let WidgetElement::HStack { children, .. }
-                                        | WidgetElement::VStack { children, .. } = &child.element
-                                        {
-                                            for child in children {
-                                                // Get widget information (position, width and height)
-                                                let layout_resolved =
-                                                    layout.layouts.get(&child.id).unwrap();
-                                                // Check if the widget was clicked
-                                                let clicked = check_clicked(
-                                                    layout_resolved,
-                                                    self.user_app.position,
-                                                );
-                                                if clicked {
-                                                    if let Some(callback) = &child.on_click {
-                                                        let mut cb = callback.borrow_mut();
-                                                        cb(
-                                                            &mut self.user_app.app,
-                                                            &mut user_window,
-                                                        );
-                                                        window.request_redraw();
-                                                    }
+                        if clicked {
+                            if let WidgetElement::VStack { children, .. }
+                            | WidgetElement::HStack { children, .. } = &ui.element
+                            {
+                                for child in children {
+                                    if let WidgetElement::HStack { children, .. }
+                                    | WidgetElement::VStack { children, .. } = &child.element
+                                    {
+                                        for child in children {
+                                            // Get widget information (position, width and height)
+                                            let layout_resolved =
+                                                layout.layouts.get(&child.id).unwrap();
+                                            // Check if the widget was clicked
+                                            let clicked = check_clicked(
+                                                layout_resolved,
+                                                self.user_app.position,
+                                            );
+                                            if clicked {
+                                                if let Some(callback) = &child.on_click {
+                                                    let mut cb = callback.borrow_mut();
+                                                    cb(&mut self.user_app.app, &mut user_window);
+                                                    window.request_redraw();
                                                 }
                                             }
                                         }
-
-                                        // Get widget information (position, width and height)
-                                        let layout_resolved =
-                                            layout.layouts.get(&child.id).unwrap();
-                                        // Check if the widget was clicked
-                                        let clicked =
-                                            check_clicked(layout_resolved, self.user_app.position);
-                                        if clicked {
-                                            if let Some(callback) = &child.on_click {
-                                                let mut cb = callback.borrow_mut();
-                                                cb(&mut self.user_app.app, &mut user_window);
-                                                window.request_redraw();
-                                            }
-                                        }
                                     }
-                                } else if let WidgetElement::Container { child, .. } =
-                                    &ui.widgets[0].element
-                                {
+
                                     // Get widget information (position, width and height)
-                                    let layout_resolved =
-                                        layout.layouts.get(&ui.widgets[0].id).unwrap();
+                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
                                     // Check if the widget was clicked
                                     let clicked =
                                         check_clicked(layout_resolved, self.user_app.position);
                                     if clicked {
-                                        if let Some(callback) = &ui.widgets[0].on_click {
+                                        if let Some(callback) = &child.on_click {
                                             let mut cb = callback.borrow_mut();
                                             cb(&mut self.user_app.app, &mut user_window);
                                             window.request_redraw();
                                         }
-                                    } else {
-                                        // Check the child of container
+                                    }
+                                }
+                            } else if let WidgetElement::Container { child, .. } = &ui.element {
+                                // Get widget information (position, width and height)
+                                let layout_resolved = layout.layouts.get(&ui.id).unwrap();
+                                // Check if the widget was clicked
+                                let clicked =
+                                    check_clicked(layout_resolved, self.user_app.position);
+                                if clicked {
+                                    if let Some(callback) = &ui.on_click {
+                                        let mut cb = callback.borrow_mut();
+                                        cb(&mut self.user_app.app, &mut user_window);
+                                        window.request_redraw();
+                                    }
+                                } else {
+                                    // Check the child of container
 
-                                        // Get widget information (position, width and height)
-                                        let layout_resolved =
-                                            layout.layouts.get(&child.id).unwrap();
-                                        // Check if the widget was clicked
-                                        let clicked =
-                                            check_clicked(layout_resolved, self.user_app.position);
-                                        if clicked {
-                                            if let Some(callback) = &child.on_click {
-                                                let mut cb = callback.borrow_mut();
-                                                cb(&mut self.user_app.app, &mut user_window);
-                                                window.request_redraw();
-                                            }
+                                    // Get widget information (position, width and height)
+                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
+                                    // Check if the widget was clicked
+                                    let clicked =
+                                        check_clicked(layout_resolved, self.user_app.position);
+                                    if clicked {
+                                        if let Some(callback) = &child.on_click {
+                                            let mut cb = callback.borrow_mut();
+                                            cb(&mut self.user_app.app, &mut user_window);
+                                            window.request_redraw();
                                         }
                                     }
                                 }
                             }
-                        };
+                        }
                     }
                 }
             }

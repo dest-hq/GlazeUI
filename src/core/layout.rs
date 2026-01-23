@@ -1,6 +1,6 @@
 use crate::{
     core::widget::{Widget, WidgetElement},
-    widgets::text::TextWeight,
+    types::TextWeight,
 };
 use glyphon::{Attrs, Buffer, FontSystem, Metrics, Shaping, Weight};
 use std::{collections::HashMap, marker::PhantomData};
@@ -118,13 +118,13 @@ impl<App> LayoutEngine<App> {
         {
             let weight = match weight {
                 TextWeight::THIN => 100,
-                TextWeight::EXTRA_LIGHT => 200,
+                TextWeight::EXTRALIGHT => 200,
                 TextWeight::LIGHT => 300,
                 TextWeight::NORMAL => 400,
                 TextWeight::MEDIUM => 500,
                 TextWeight::SEMIBOLD => 600,
                 TextWeight::BOLD => 700,
-                TextWeight::EXTRA_BOLD => 800,
+                TextWeight::EXTRABOLD => 800,
                 TextWeight::BLACK => 900,
             };
 

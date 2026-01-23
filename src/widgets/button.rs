@@ -2,12 +2,14 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     Window,
-    core::{ui::Ui, widget::Widget},
-    types::{Align, Length},
-    widgets::text::TextWeight,
+    core::widget::Widget,
+    types::{Align, Color, Length, Padding, TextWeight},
+    widgets::ui::build_button,
 };
 
-use crate::types::{Color, Padding};
+pub fn button<App>(label: &str) -> Button<App> {
+    Button::new(label.to_string())
+}
 
 pub struct Button<App> {
     pub label: String,
@@ -22,11 +24,6 @@ pub struct Button<App> {
     pub align: Option<Align>,
     pub length: Option<Length>,
     pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
-}
-
-pub struct ButtonHandle<'a, App> {
-    pub ui: &'a mut Ui<App>,
-    pub button: Button<App>,
 }
 
 impl<App> Button<App> {
@@ -52,52 +49,50 @@ impl<App> Button<App> {
             length: None,
         }
     }
-}
 
-impl<'a, App> ButtonHandle<'a, App> {
     pub fn size(mut self, width: f32, height: f32) -> Self {
-        self.button.width = width;
-        self.button.height = height;
+        self.width = width;
+        self.height = height;
         self
     }
 
     pub fn label_size(mut self, font_size: u32) -> Self {
-        self.button.label_size = font_size;
+        self.label_size = font_size;
         self
     }
 
     pub fn label_weight(mut self, weight: TextWeight) -> Self {
-        self.button.label_weight = weight;
+        self.label_weight = weight;
         self
     }
 
     pub fn label_color(mut self, color: Color) -> Self {
-        self.button.label_color = color;
+        self.label_color = color;
         self
     }
 
     pub fn color(mut self, color: Color) -> Self {
-        self.button.color = color;
+        self.color = color;
         self
     }
 
     pub fn radius(mut self, corner_radius: f32) -> Self {
-        self.button.radius = corner_radius;
+        self.radius = corner_radius;
         self
     }
 
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.button.padding = padding;
+        self.padding = padding;
         self
     }
 
     pub fn align(mut self, align: Align) -> Self {
-        self.button.align = Some(align);
+        self.align = Some(align);
         self
     }
 
     pub fn length(mut self, length: Length) -> Self {
-        self.button.length = Some(length);
+        self.length = Some(length);
         self
     }
 
@@ -105,15 +100,11 @@ impl<'a, App> ButtonHandle<'a, App> {
     where
         F: FnMut(&mut App, &mut Window) + 'static,
     {
-        self.button.on_click = Some(Rc::new(RefCell::new(f)));
+        self.on_click = Some(Rc::new(RefCell::new(f)));
         self
     }
 
-    pub fn show(self) {
-        self.ui.push_button(self.button);
-    }
-
     pub fn build(self) -> Widget<App> {
-        self.ui.build_button(self.button)
+        build_button(self)
     }
 }
