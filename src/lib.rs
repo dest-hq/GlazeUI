@@ -30,6 +30,7 @@ pub type Error = EventLoopError;
 
 pub struct Window<'window> {
     window: Arc<WinitWindow>,
+    background: &'window mut Color,
     eventloop: &'window ActiveEventLoop,
 }
 
@@ -40,6 +41,13 @@ impl<'window> Window<'window> {
 
     pub fn request_redraw(&mut self) {
         self.window.request_redraw();
+    }
+
+    pub fn background(&mut self, color: Color) {
+        self.background.r = color.r;
+        self.background.g = color.g;
+        self.background.b = color.b;
+        self.background.a = color.a;
     }
 
     pub fn request_user_attention(&mut self, attention: UserAttention) {
@@ -323,6 +331,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                             _view(&mut self.user_app.app, &mut ui);
                             let mut user_window = Window {
                                 window: self.window.as_ref().unwrap().clone(),
+                                background: &mut self.user_app.background,
                                 eventloop: event_loop,
                             };
                             let layout_resolved = layout.layouts.get(&ui.widgets[0].id).unwrap();
