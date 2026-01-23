@@ -1275,6 +1275,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "modify_window"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+]
+
+[[package]]
 name = "moxcms"
 version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
