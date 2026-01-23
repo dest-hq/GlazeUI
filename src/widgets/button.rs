@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
+    Window,
     core::{ui::Ui, widget::Widget},
     types::{Align, Length},
     widgets::text::TextWeight,
@@ -20,7 +21,7 @@ pub struct Button<App> {
     pub padding: Padding,
     pub align: Option<Align>,
     pub length: Option<Length>,
-    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App)>>>,
+    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
 }
 
 pub struct ButtonHandle<'a, App> {
@@ -102,7 +103,7 @@ impl<'a, App> ButtonHandle<'a, App> {
 
     pub fn on_click<F>(mut self, f: F) -> Self
     where
-        F: FnMut(&mut App) + 'static,
+        F: FnMut(&mut App, &mut Window) + 'static,
     {
         self.button.on_click = Some(Rc::new(RefCell::new(f)));
         self

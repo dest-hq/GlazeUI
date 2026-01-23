@@ -68,12 +68,23 @@ pub enum Length {
     Fixed(f32, f32),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
     pub b: u8,
     pub a: u8,
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 255,
+        }
+    }
 }
 
 impl Color {
@@ -121,4 +132,26 @@ fn convert_hex(hex: &str) -> Option<(u8, u8, u8)> {
     let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
 
     return Some((r, g, b));
+}
+
+pub enum Theme {
+    Dark,
+    Light,
+}
+
+pub enum WindowLevel {
+    Normal,
+    AlwaysOnTop,
+    AlwaysOnBottom,
+}
+
+pub enum UserAttention {
+    Critical,
+    Informational,
+}
+
+#[derive(Debug, Clone)]
+pub enum Backend {
+    Auto, // Vulkan, Metal, DX12 or Browser WebGPU
+    OpenGL,
 }

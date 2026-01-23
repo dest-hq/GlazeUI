@@ -1,3 +1,4 @@
+use crate::Window;
 use crate::widgets::text::TextWeight;
 use std::cell::RefCell;
 use std::fmt;
@@ -16,7 +17,7 @@ pub struct Widget<App> {
     pub style: Style,
 
     /// Message that will be sent on click
-    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App)>>>,
+    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
 }
 
 impl<App> fmt::Debug for Widget<App> {
@@ -46,7 +47,7 @@ impl<App> Widget<App> {
     pub fn new(
         id: u64,
         element: WidgetElement<App>,
-        on_click: Option<Rc<RefCell<dyn FnMut(&mut App)>>>,
+        on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
         style: Style,
     ) -> Self {
         Self {

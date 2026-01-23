@@ -1,5 +1,5 @@
 use glazeui::{
-    Error,
+    Error, Window,
     core::ui::Ui,
     start,
     types::{Align, Length},
@@ -69,14 +69,14 @@ impl Random {
         let button1 = ui
             .button(&self.number1.to_string())
             .label_size(20)
-            .on_click(|app: &mut Random| {
+            .on_click(|app: &mut Random, _window: &mut Window| {
                 app.verify(app.number1);
             })
             .build();
         let button2 = ui
             .button(&self.number2.to_string())
             .label_size(20)
-            .on_click(|app: &mut Random| {
+            .on_click(|app: &mut Random, _window: &mut Window| {
                 app.verify(app.number2);
             })
             .build();

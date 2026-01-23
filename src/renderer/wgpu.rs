@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::core::widget::WidgetElement;
 use crate::layout::LayoutEngine;
 use crate::renderer::components;
+use crate::types::Backend;
 use crate::{core::widget::Widget, widgets::text::TextWeight};
 use components::{
     atlas::Atlas, lib::Area, lib::CanvasColor, lib::Item, lib::Shape, lib::ShapeType,
@@ -60,8 +61,15 @@ pub struct ShapeCommand {
 }
 
 impl<'window, App> WgpuCtx<'window, App> {
-    pub async fn new_async(window: Arc<Window>) -> WgpuCtx<'window, App> {
-        let instance = wgpu::Instance::default();
+    pub async fn new_async(window: Arc<Window>, backend: Backend) -> WgpuCtx<'window, App> {
+        let backend = match backend {
+            Backend::Auto => wgpu::Backends::PRIMARY,
+            Backend::OpenGL => wgpu::Backends::GL,
+        };
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            backends: backend,
+            ..Default::default()
+        });
         let surface = instance.create_surface(Arc::clone(&window)).unwrap();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -132,8 +140,8 @@ impl<'window, App> WgpuCtx<'window, App> {
         }
     }
 
-    pub fn new(window: Arc<Window>) -> WgpuCtx<'window, App> {
-        pollster::block_on(WgpuCtx::new_async(window))
+    pub fn new(window: Arc<Window>, backend: Backend) -> WgpuCtx<'window, App> {
+        pollster::block_on(WgpuCtx::new_async(window, backend))
     }
 
     pub fn resize(&mut self, new_size: (u32, u32)) {
@@ -148,6 +156,7 @@ impl<'window, App> WgpuCtx<'window, App> {
         element: &Widget<App>,
         layout: &LayoutEngine<App>,
         font_system: &mut FontSystem,
+        background: crate::types::Color,
     ) {
         self.text_buffer.clear();
         self.text_positions.clear();
@@ -168,10 +177,15 @@ impl<'window, App> WgpuCtx<'window, App> {
         self.collect_widgets(element, layout, &mut frame);
 
         // Render UI
-        self.render(frame, font_system);
+        self.render(frame, font_system, background);
     }
 
-    fn render(&mut self, frame: UiFrame, font_system: &mut FontSystem) {
+    fn render(
+        &mut self,
+        frame: UiFrame,
+        font_system: &mut FontSystem,
+        background: crate::types::Color,
+    ) {
         let surface_texture = self.surface.get_current_texture().unwrap();
         let texture_view = surface_texture.texture.create_view(&Default::default());
 
@@ -188,10 +202,10 @@ impl<'window, App> WgpuCtx<'window, App> {
                     depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 0.9,
+                            r: background.r as f64 / 255.0,
+                            g: background.g as f64 / 255.0,
+                            b: background.b as f64 / 255.0,
+                            a: 1.0,
                         }),
                         store: wgpu::StoreOp::Store,
                     },

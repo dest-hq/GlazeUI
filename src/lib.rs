@@ -15,26 +15,60 @@ use winit::{
     event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{
-        Theme as WinitTheme, Window, WindowAttributes, WindowId, WindowLevel as WinitWindowLevel,
+        Theme as WinitTheme, Window as WinitWindow, WindowAttributes, WindowId,
+        WindowLevel as WinitWindowLevel,
     },
 };
 
 use crate::{
     core::{ui::Ui, widget::WidgetElement},
     layout::ResolvedLayout,
+    types::{Backend, Color, Theme, UserAttention, WindowLevel},
 };
 
 pub type Error = EventLoopError;
 
-pub enum Theme {
-    Dark,
-    Light,
+pub struct Window<'window> {
+    window: Arc<WinitWindow>,
+    eventloop: &'window ActiveEventLoop,
 }
 
-pub enum WindowLevel {
-    Normal,
-    AlwaysOnTop,
-    AlwaysOnBottom,
+impl<'window> Window<'window> {
+    pub fn title(&mut self, title: &str) {
+        self.window.set_title(title);
+    }
+
+    pub fn request_redraw(&mut self) {
+        self.window.request_redraw();
+    }
+
+    pub fn request_user_attention(&mut self, attention: UserAttention) {
+        let attention = match attention {
+            UserAttention::Critical => winit::window::UserAttentionType::Critical,
+            UserAttention::Informational => winit::window::UserAttentionType::Informational,
+        };
+        self.window.request_user_attention(Some(attention));
+    }
+
+    pub fn decorations(&mut self, decorations: bool) {
+        self.window.set_decorations(decorations);
+    }
+
+    pub fn resizable(&mut self, resizable: bool) {
+        self.window.set_resizable(resizable);
+    }
+
+    pub fn theme(&mut self, theme: Theme) {
+        let theme = match theme {
+            Theme::Dark => WinitTheme::Dark,
+            Theme::Light => WinitTheme::Light,
+        };
+        self.window.set_theme(Some(theme));
+    }
+
+    pub fn close(&mut self) {
+        self.eventloop.exit();
+    }
 }
 
 // Helper to start app
@@ -47,6 +81,8 @@ pub struct Run<App> {
     window_settings: WindowAttributes,
     vsync: bool,
     view_fn: fn(&mut App, &mut Ui<App>),
+    backend: Backend,
+    background: Color,
     _marker: PhantomData<App>,
 }
 
@@ -57,12 +93,24 @@ impl<App> Run<App> {
             window_settings: WindowAttributes::default().with_title("GlazeUI"),
             vsync: true,
             view_fn: view_fn,
+            backend: Backend::Auto,
+            background: Color::rgb(0, 0, 0),
             _marker: PhantomData,
         }
     }
 
+    pub fn backend(mut self, backend: Backend) -> Self {
+        self.backend = backend;
+        self
+    }
+
     pub fn title(mut self, name: &str) -> Self {
         self.window_settings = self.window_settings.with_title(name);
+        self
+    }
+
+    pub fn background(mut self, background: Color) -> Self {
+        self.background = background;
         self
     }
 
@@ -154,8 +202,10 @@ impl<App> Run<App> {
             window_settings: self.window_settings,
             window: None,
             wgpu_ctx: None,
+            backend: Some(self.backend),
             user_app: UserApp {
                 app: self.app,
+                background: self.background,
                 layout: None,
                 view_fn: Some(self.view_fn),
                 position: PhysicalPosition::new(0.0, 0.0),
@@ -173,6 +223,7 @@ impl<App> Run<App> {
 struct UserApp<App> {
     app: App,
     view_fn: Option<fn(&mut App, &mut Ui<App>)>,
+    background: Color,
     font_system: Option<FontSystem>,
     position: PhysicalPosition<f64>,
     layout: Option<LayoutEngine<App>>,
@@ -180,8 +231,9 @@ struct UserApp<App> {
 
 #[derive(Default)]
 struct UserWindow<'window, App> {
-    window: Option<Arc<Window>>,
+    window: Option<Arc<WinitWindow>>,
     wgpu_ctx: Option<WgpuCtx<'window, App>>,
+    backend: Option<Backend>,
     window_settings: WindowAttributes,
     user_app: UserApp<App>,
 }
@@ -196,7 +248,12 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                     .expect("Creating window error"),
             );
             self.window = Some(window.clone());
-            let wgpu_ctx = WgpuCtx::new(window.clone());
+            let backend = if let Some(backend) = self.backend.clone() {
+                backend
+            } else {
+                Backend::Auto
+            };
+            let wgpu_ctx = WgpuCtx::new(window.clone(), backend);
             self.wgpu_ctx = Some(wgpu_ctx);
         }
     }
@@ -246,7 +303,12 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                         &mut self.user_app.font_system,
                     );
                     if let Some(font_system) = self.user_app.font_system.as_mut() {
-                        wgpu_ctx.draw(&&ui.widgets[0], &layout, font_system);
+                        wgpu_ctx.draw(
+                            &&ui.widgets[0],
+                            &layout,
+                            font_system,
+                            self.user_app.background,
+                        );
                     }
                     self.user_app.layout = Some(layout);
                 }
@@ -259,6 +321,10 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                             let mut ui = Ui::new();
                             let _view = self.user_app.view_fn.unwrap();
                             _view(&mut self.user_app.app, &mut ui);
+                            let mut user_window = Window {
+                                window: self.window.as_ref().unwrap().clone(),
+                                eventloop: event_loop,
+                            };
                             let layout_resolved = layout.layouts.get(&ui.widgets[0].id).unwrap();
 
                             let clicked = check_clicked(layout_resolved, self.user_app.position);
@@ -283,7 +349,10 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                                 if clicked {
                                                     if let Some(callback) = &child.on_click {
                                                         let mut cb = callback.borrow_mut();
-                                                        cb(&mut self.user_app.app);
+                                                        cb(
+                                                            &mut self.user_app.app,
+                                                            &mut user_window,
+                                                        );
                                                         window.request_redraw();
                                                     }
                                                 }
@@ -299,7 +368,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                         if clicked {
                                             if let Some(callback) = &child.on_click {
                                                 let mut cb = callback.borrow_mut();
-                                                cb(&mut self.user_app.app);
+                                                cb(&mut self.user_app.app, &mut user_window);
                                                 window.request_redraw();
                                             }
                                         }
@@ -316,7 +385,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     if clicked {
                                         if let Some(callback) = &ui.widgets[0].on_click {
                                             let mut cb = callback.borrow_mut();
-                                            cb(&mut self.user_app.app);
+                                            cb(&mut self.user_app.app, &mut user_window);
                                             window.request_redraw();
                                         }
                                     } else {
@@ -331,14 +400,14 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                         if clicked {
                                             if let Some(callback) = &child.on_click {
                                                 let mut cb = callback.borrow_mut();
-                                                cb(&mut self.user_app.app);
+                                                cb(&mut self.user_app.app, &mut user_window);
                                                 window.request_redraw();
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
+                        };
                     }
                 }
             }
