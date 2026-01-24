@@ -43,6 +43,16 @@ impl ModifyWindow {
             .size(340.0, 50.0)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.resizable(false))
             .build();
+        let minimize = button("Minimize")
+            .label_size(25)
+            .size(340.0, 50.0)
+            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.minimize())
+            .build();
+        let maximize = button("Maximize")
+            .label_size(25)
+            .size(340.0, 50.0)
+            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.maximize())
+            .build();
 
         vstack!(
             close,
@@ -50,7 +60,9 @@ impl ModifyWindow {
             change_title,
             off_decorations,
             on_decorations,
-            off_resizable
+            off_resizable,
+            minimize,
+            maximize
         )
         .align(glazeui::types::Align::Center)
         .spacing(20.0)

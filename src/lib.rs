@@ -76,6 +76,14 @@ impl<'window> Window<'window> {
     pub fn close(&mut self) {
         self.eventloop.exit();
     }
+
+    pub fn minimize(&mut self) {
+        self.window.set_minimized(true);
+    }
+
+    pub fn maximize(&mut self) {
+        self.window.set_maximized(true);
+    }
 }
 
 // Helper to start app
