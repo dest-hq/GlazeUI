@@ -1,13 +1,13 @@
 #[derive(Debug)]
 pub struct Padding {
-    pub top: f32,
-    pub left: f32,
-    pub right: f32,
-    pub bottom: f32,
+    pub top: i32,
+    pub left: i32,
+    pub right: i32,
+    pub bottom: i32,
 }
 
 impl Padding {
-    pub fn all(padding: f32) -> Self {
+    pub fn all(padding: i32) -> Self {
         Padding {
             top: padding,
             left: padding,
@@ -18,30 +18,30 @@ impl Padding {
 
     pub fn new() -> Self {
         Padding {
-            top: 0.0,
-            left: 0.0,
-            right: 0.0,
-            bottom: 0.0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
         }
     }
 
-    pub fn left(mut self, padding: f32) -> Self {
+    pub fn left(mut self, padding: i32) -> Self {
         self.left = padding;
         self
     }
 
-    pub fn right(mut self, padding: f32) -> Self {
+    pub fn right(mut self, padding: i32) -> Self {
         self.right = padding;
         self
     }
 
-    pub fn bottom(mut self, padding: f32) -> Self {
+    pub fn bottom(mut self, padding: i32) -> Self {
         self.bottom = padding;
         self
     }
 
-    pub fn top(mut self, padding: f32) -> Self {
-        self.bottom = padding;
+    pub fn top(mut self, padding: i32) -> Self {
+        self.top = padding;
         self
     }
 }
@@ -88,6 +88,44 @@ impl Default for Color {
 }
 
 impl Color {
+    // Const
+
+    pub fn black() -> Self {
+        Self {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 255,
+        }
+    }
+
+    pub fn white() -> Self {
+        Self {
+            r: 255,
+            g: 255,
+            b: 255,
+            a: 255,
+        }
+    }
+
+    pub fn red() -> Self {
+        Self {
+            r: 229,
+            g: 46,
+            b: 29,
+            a: 255,
+        }
+    }
+
+    pub fn blue() -> Self {
+        Self {
+            r: 29,
+            g: 49,
+            b: 229,
+            a: 255,
+        }
+    }
+
     pub fn rgb(r: u8, g: u8, b: u8) -> Self {
         Self {
             r: r,

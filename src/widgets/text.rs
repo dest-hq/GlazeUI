@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{
     core::widget::Widget,
-    types::{Align, Color, Length, TextWeight},
+    types::{Align, Color, Length, Padding, TextWeight},
     widgets::ui::build_text,
 };
 
@@ -19,6 +19,7 @@ pub struct Text<App> {
     pub color: Color,
     pub align: Option<Align>,
     pub length: Option<Length>,
+    pub padding: Padding,
     _marker: PhantomData<App>,
 }
 
@@ -31,6 +32,7 @@ impl<App> Text<App> {
             color: Color::rgb(255, 255, 255),
             align: None,
             length: None,
+            padding: Padding::new(),
             _marker: PhantomData,
         }
     }
@@ -42,6 +44,11 @@ impl<App> Text<App> {
 
     pub fn center(mut self) -> Self {
         self.align = Some(Align::Center);
+        self
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
         self
     }
 

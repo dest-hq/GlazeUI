@@ -1,9 +1,9 @@
 use glyphon::FontSystem;
 pub mod core;
+pub mod layout;
 pub mod renderer;
 pub mod types;
 pub mod widgets;
-use core::layout::LayoutEngine;
 use renderer::wgpu::WgpuCtx;
 use std::{marker::PhantomData, sync::Arc};
 use widgets::utils::ui_id::clear_counter;
@@ -20,8 +20,8 @@ use winit::{
 };
 
 use crate::{
-    core::layout::ResolvedLayout,
     core::widget::{Widget, WidgetElement},
+    layout::engine::{LayoutEngine, LayoutWidget},
     types::{Backend, Color, Theme, UserAttention, WindowLevel},
 };
 
@@ -77,12 +77,12 @@ impl<'window> Window<'window> {
         self.eventloop.exit();
     }
 
-    pub fn minimize(&mut self) {
-        self.window.set_minimized(true);
+    pub fn minimize(&mut self, minimized: bool) {
+        self.window.set_minimized(minimized);
     }
 
-    pub fn maximize(&mut self) {
-        self.window.set_maximized(true);
+    pub fn maximize(&mut self, maximized: bool) {
+        self.window.set_maximized(maximized);
     }
 }
 
@@ -307,16 +307,13 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                     let mut layout = LayoutEngine::new();
                     let ui = view(&mut self.user_app.app);
 
-                    // Create vstack widget that will contain all widgets
-                    // Like if you write at widgets .show() it will be automatic put in vstack
-                    //
-
                     layout.compute(
                         &ui,
                         size.width as f32,
                         size.height as f32,
                         &mut self.user_app.font_system,
                     );
+
                     if let Some(font_system) = self.user_app.font_system.as_mut() {
                         wgpu_ctx.draw(&&ui, &layout, font_system, self.user_app.background);
                     }
@@ -337,7 +334,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                             background: &mut self.user_app.background,
                             eventloop: event_loop,
                         };
-                        let layout_resolved = layout.layouts.get(&ui.id).unwrap();
+                        let layout_resolved = layout.get(&ui.id).unwrap();
 
                         let clicked = check_clicked(layout_resolved, self.user_app.position);
 
@@ -351,8 +348,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     {
                                         for child in children {
                                             // Get widget information (position, width and height)
-                                            let layout_resolved =
-                                                layout.layouts.get(&child.id).unwrap();
+                                            let layout_resolved = layout.get(&ui.id).unwrap();
                                             // Check if the widget was clicked
                                             let clicked = check_clicked(
                                                 layout_resolved,
@@ -369,7 +365,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     }
 
                                     // Get widget information (position, width and height)
-                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
+                                    let layout_resolved = layout.get(&ui.id).unwrap();
                                     // Check if the widget was clicked
                                     let clicked =
                                         check_clicked(layout_resolved, self.user_app.position);
@@ -383,7 +379,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                 }
                             } else if let WidgetElement::Container { child, .. } = &ui.element {
                                 // Get widget information (position, width and height)
-                                let layout_resolved = layout.layouts.get(&ui.id).unwrap();
+                                let layout_resolved = layout.get(&ui.id).unwrap();
                                 // Check if the widget was clicked
                                 let clicked =
                                     check_clicked(layout_resolved, self.user_app.position);
@@ -397,7 +393,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     // Check the child of container
 
                                     // Get widget information (position, width and height)
-                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
+                                    let layout_resolved = layout.get(&ui.id).unwrap();
                                     // Check if the widget was clicked
                                     let clicked =
                                         check_clicked(layout_resolved, self.user_app.position);
@@ -422,7 +418,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
     }
 }
 
-fn check_clicked(layout: &ResolvedLayout, click: PhysicalPosition<f64>) -> bool {
+fn check_clicked(layout: &LayoutWidget, click: PhysicalPosition<f64>) -> bool {
     if click.x >= layout.x as f64
         && click.x <= layout.x as f64 + layout.width as f64
         && click.y >= layout.y as f64

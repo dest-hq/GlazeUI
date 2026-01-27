@@ -1,9 +1,9 @@
 use crate::Window;
+use crate::layout::style::Style;
 use crate::types::TextWeight;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
-use taffy::Style;
 
 /// Widget with a generic Message type
 pub struct Widget<App> {

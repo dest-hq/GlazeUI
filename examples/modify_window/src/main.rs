@@ -13,45 +13,45 @@ impl ModifyWindow {
     fn view(&mut self) -> Widget<ModifyWindow> {
         let close = button("Close")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.close())
             .build();
         let background = button("Change background to white")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| {
                 window.background(Color::rgb(255, 255, 255));
             })
             .build();
         let change_title = button("Change title to Hi")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.title("Hi"))
             .build();
         let off_decorations = button("Off decorations")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.decorations(false))
             .build();
         let on_decorations = button("On decorations")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.decorations(true))
             .build();
         let off_resizable = button("Off resizable")
             .label_size(25)
-            .size(340.0, 50.0)
+            .size(340, 50)
             .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.resizable(false))
             .build();
         let minimize = button("Minimize")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.minimize())
+            .size(340, 50)
+            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.minimize(true))
             .build();
         let maximize = button("Maximize")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.maximize())
+            .size(340, 50)
+            .on_click(|_app: &mut ModifyWindow, window: &mut Window| window.maximize(true))
             .build();
 
         vstack!(

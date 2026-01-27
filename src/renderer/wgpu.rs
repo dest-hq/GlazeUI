@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::core::layout::LayoutEngine;
 use crate::core::widget::WidgetElement;
+use crate::layout::engine::LayoutEngine;
 use crate::renderer::components;
 use crate::types::Backend;
 use crate::{core::widget::Widget, types::TextWeight};
@@ -379,7 +379,7 @@ impl<'window, App> WgpuCtx<'window, App> {
                 None,
             );
             text_buffer.shape_until_scroll(&mut self.font_system, false);
-            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
+            let layout_resolved = layout.get(&widget.id).unwrap();
 
             // Push text buffer to vec
             self.text_buffer.push(text_buffer);
@@ -428,7 +428,7 @@ impl<'window, App> WgpuCtx<'window, App> {
             ..
         } = &widget.element
         {
-            let layout_resolved = layout.layouts.get(&widget.id).unwrap();
+            let layout_resolved = layout.get(&widget.id).unwrap();
             frame.shapes.push(ShapeCommand {
                 x: layout_resolved.x,
                 y: layout_resolved.y,

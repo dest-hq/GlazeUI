@@ -16,8 +16,8 @@ pub struct Button<App> {
     pub label_size: u32,
     pub label_weight: TextWeight,
     pub label_color: Color,
-    pub width: f32,
-    pub height: f32,
+    pub width: u32,
+    pub height: u32,
     pub color: Color,
     pub radius: f32,
     pub padding: Padding,
@@ -33,15 +33,15 @@ impl<App> Button<App> {
             label_size: 14,
             label_weight: TextWeight::NORMAL,
             label_color: Color::rgb(255, 255, 255),
-            width: 100.0,
-            height: 50.0,
+            width: 100,
+            height: 50,
             color: Color::rgb(50, 50, 51),
             radius: 0.0,
             padding: Padding {
-                top: 0.0,
-                left: 0.0,
-                right: 0.0,
-                bottom: 0.0,
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
             },
             // id: None,
             on_click: None,
@@ -50,7 +50,7 @@ impl<App> Button<App> {
         }
     }
 
-    pub fn size(mut self, width: f32, height: f32) -> Self {
+    pub fn size(mut self, width: u32, height: u32) -> Self {
         self.width = width;
         self.height = height;
         self
