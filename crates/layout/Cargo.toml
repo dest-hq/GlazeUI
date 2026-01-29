@@ -1,0 +1,12 @@
+[package]
+name = "glazeui_layout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+description.workspace = true
+
+[dependencies]
+glazeui_core.workspace = true

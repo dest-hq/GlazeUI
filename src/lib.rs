@@ -1,242 +1,41 @@
+use core::{Widget, color::Color, renderer::backend::Backend};
+use glazeui_core::{WidgetElement, id::clear_counter};
+use glazeui_layout::LayoutEngine;
 use glyphon::FontSystem;
-pub mod core;
-pub mod renderer;
-pub mod types;
-pub mod widgets;
-use core::layout::LayoutEngine;
-use renderer::wgpu::WgpuCtx;
-use std::{marker::PhantomData, sync::Arc};
-use widgets::utils::ui_id::clear_counter;
+use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
-    dpi::{PhysicalPosition, PhysicalSize, Size},
+    dpi::PhysicalPosition,
     error::EventLoopError,
     event::{ElementState, MouseButton, WindowEvent},
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
-    window::{
-        Theme as WinitTheme, Window as WinitWindow, WindowAttributes, WindowId,
-        WindowLevel as WinitWindowLevel,
-    },
+    event_loop::{ActiveEventLoop, ControlFlow},
+    window::{Window as WinitWindow, WindowAttributes, WindowId},
 };
 
-use crate::{
-    core::layout::ResolvedLayout,
-    core::widget::{Widget, WidgetElement},
-    types::{Backend, Color, Theme, UserAttention, WindowLevel},
-};
+pub mod application;
+
+pub mod vello {
+    pub use glazeui_vello::*;
+}
+pub mod layout {
+    pub use glazeui_layout::*;
+}
+pub mod widgets {
+    pub use glazeui_widget::*;
+}
+pub mod core {
+    pub use glazeui_core::*;
+}
+pub mod winitwindow {
+    pub use glazeui_winit::*;
+}
 
 pub type Error = EventLoopError;
-
-pub struct Window<'window> {
-    window: Arc<WinitWindow>,
-    background: &'window mut Color,
-    eventloop: &'window ActiveEventLoop,
-}
-
-impl<'window> Window<'window> {
-    pub fn title(&mut self, title: &str) {
-        self.window.set_title(title);
-    }
-
-    pub fn request_redraw(&mut self) {
-        self.window.request_redraw();
-    }
-
-    pub fn background(&mut self, color: Color) {
-        self.background.r = color.r;
-        self.background.g = color.g;
-        self.background.b = color.b;
-        self.background.a = color.a;
-    }
-
-    pub fn request_user_attention(&mut self, attention: UserAttention) {
-        let attention = match attention {
-            UserAttention::Critical => winit::window::UserAttentionType::Critical,
-            UserAttention::Informational => winit::window::UserAttentionType::Informational,
-        };
-        self.window.request_user_attention(Some(attention));
-    }
-
-    pub fn decorations(&mut self, decorations: bool) {
-        self.window.set_decorations(decorations);
-    }
-
-    pub fn resizable(&mut self, resizable: bool) {
-        self.window.set_resizable(resizable);
-    }
-
-    pub fn theme(&mut self, theme: Theme) {
-        let theme = match theme {
-            Theme::Dark => WinitTheme::Dark,
-            Theme::Light => WinitTheme::Light,
-        };
-        self.window.set_theme(Some(theme));
-    }
-
-    pub fn close(&mut self) {
-        self.eventloop.exit();
-    }
-
-    pub fn minimize(&mut self) {
-        self.window.set_minimized(true);
-    }
-
-    pub fn maximize(&mut self) {
-        self.window.set_maximized(true);
-    }
-}
-
-// Helper to start app
-pub fn start<App>(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Run<App> {
-    Run::new(app, view_fn)
-}
-
-pub struct Run<App> {
-    app: App,
-    window_settings: WindowAttributes,
-    vsync: bool,
-    view_fn: fn(&mut App) -> Widget<App>,
-    backend: Backend,
-    background: Color,
-    _marker: PhantomData<App>,
-}
-
-impl<App> Run<App> {
-    pub fn new(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Self {
-        Self {
-            app: app,
-            window_settings: WindowAttributes::default().with_title("GlazeUI"),
-            vsync: true,
-            view_fn: view_fn,
-            backend: Backend::Auto,
-            background: Color::rgb(0, 0, 0),
-            _marker: PhantomData,
-        }
-    }
-
-    pub fn backend(mut self, backend: Backend) -> Self {
-        self.backend = backend;
-        self
-    }
-
-    pub fn title(mut self, name: &str) -> Self {
-        self.window_settings = self.window_settings.with_title(name);
-        self
-    }
-
-    pub fn background(mut self, background: Color) -> Self {
-        self.background = background;
-        self
-    }
-
-    pub fn size(mut self, width: u32, height: u32) -> Self {
-        self.window_settings = self
-            .window_settings
-            .with_inner_size(Size::Physical(PhysicalSize {
-                width: width,
-                height: height,
-            }));
-        self
-    }
-
-    pub fn max_size(mut self, width: u32, height: u32) -> Self {
-        self.window_settings =
-            self.window_settings
-                .with_max_inner_size(Size::Physical(PhysicalSize {
-                    width: width,
-                    height: height,
-                }));
-        self
-    }
-
-    pub fn min_size(mut self, width: u32, height: u32) -> Self {
-        self.window_settings =
-            self.window_settings
-                .with_min_inner_size(Size::Physical(PhysicalSize {
-                    width: width,
-                    height: height,
-                }));
-        self
-    }
-
-    pub fn level(mut self, level: WindowLevel) -> Self {
-        let level = match level {
-            WindowLevel::AlwaysOnBottom => WinitWindowLevel::AlwaysOnBottom,
-            WindowLevel::AlwaysOnTop => WinitWindowLevel::AlwaysOnTop,
-            WindowLevel::Normal => WinitWindowLevel::Normal,
-        };
-        self.window_settings = self.window_settings.with_window_level(level);
-        self
-    }
-
-    pub fn blur(mut self, blur: bool) -> Self {
-        self.window_settings = self.window_settings.with_blur(blur);
-        self
-    }
-
-    pub fn transparent(mut self, transparent: bool) -> Self {
-        self.window_settings = self.window_settings.with_transparent(transparent);
-        self
-    }
-
-    pub fn decorations(mut self, decorations: bool) -> Self {
-        self.window_settings = self.window_settings.with_decorations(decorations);
-        self
-    }
-
-    pub fn resizable(mut self, resizable: bool) -> Self {
-        self.window_settings = self.window_settings.with_resizable(resizable);
-        self
-    }
-
-    pub fn vsync(mut self, vsync: bool) -> Self {
-        self.vsync = vsync;
-        self
-    }
-
-    // The theme of titlebar
-    pub fn theme(mut self, theme: Theme) -> Self {
-        let theme = match theme {
-            Theme::Dark => WinitTheme::Dark,
-            Theme::Light => WinitTheme::Light,
-        };
-        self.window_settings = self.window_settings.with_theme(Some(theme));
-        self
-    }
-
-    // Function to run the app
-    pub fn run(self) -> Result<(), Error> {
-        let event_loop = EventLoop::new().unwrap();
-
-        match self.vsync {
-            true => event_loop.set_control_flow(ControlFlow::Wait),
-            false => event_loop.set_control_flow(ControlFlow::Poll),
-        };
-
-        let mut window = UserWindow::<App> {
-            window_settings: self.window_settings,
-            window: None,
-            wgpu_ctx: None,
-            backend: Some(self.backend),
-            user_app: UserApp {
-                app: self.app,
-                background: self.background,
-                layout: None,
-                view_fn: Some(self.view_fn),
-                position: PhysicalPosition::new(0.0, 0.0),
-                font_system: Some(FontSystem::new()),
-            },
-        };
-        match event_loop.run_app(&mut window) {
-            Ok(()) => return Ok(()),
-            Err(e) => return Err(e),
-        }
-    }
-}
+pub type Result = std::result::Result<(), Error>;
 
 #[derive(Default)]
 struct UserApp<App> {
-    app: App,
+    user_struct: App,
     view_fn: Option<fn(&mut App) -> Widget<App>>,
     background: Color,
     font_system: Option<FontSystem>,
@@ -305,18 +104,13 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                     clear_counter();
 
                     let mut layout = LayoutEngine::new();
-                    let ui = view(&mut self.user_app.app);
+                    let ui = view(&mut self.user_app.user_struct);
 
                     // Create vstack widget that will contain all widgets
                     // Like if you write at widgets .show() it will be automatic put in vstack
                     //
 
-                    layout.compute(
-                        &ui,
-                        size.width as f32,
-                        size.height as f32,
-                        &mut self.user_app.font_system,
-                    );
+                    layout.compute(&ui, size.width as f32, size.height as f32);
                     if let Some(font_system) = self.user_app.font_system.as_mut() {
                         wgpu_ctx.draw(&&ui, &layout, font_system, self.user_app.background);
                     }
@@ -331,13 +125,13 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                         self.user_app.layout.as_ref(),
                     ) {
                         clear_counter();
-                        let ui = view(&mut self.user_app.app);
+                        let ui = view(&mut self.user_app.user_struct);
                         let mut user_window = Window {
                             window: self.window.as_ref().unwrap().clone(),
                             background: &mut self.user_app.background,
                             eventloop: event_loop,
                         };
-                        let layout_resolved = layout.layouts.get(&ui.id).unwrap();
+                        let layout_resolved = layout.get(ui.id).unwrap();
 
                         let clicked = check_clicked(layout_resolved, self.user_app.position);
 
@@ -351,8 +145,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     {
                                         for child in children {
                                             // Get widget information (position, width and height)
-                                            let layout_resolved =
-                                                layout.layouts.get(&child.id).unwrap();
+                                            let layout_resolved = layout.get(child.id).unwrap();
                                             // Check if the widget was clicked
                                             let clicked = check_clicked(
                                                 layout_resolved,
