@@ -3,7 +3,7 @@ use ::vello::{
     peniko::color::AlphaColor,
     util::{RenderContext, RenderSurface},
 };
-use core::{Widget, color::Color, renderer::backend::Backend};
+use core::{Widget, backend::Backend, color::Color};
 use glazeui_core::{WidgetElement, id::clear_counter, window::control::Window};
 use glazeui_layout::{LayoutEngine, LayoutNode};
 use glazeui_vello::draw;
@@ -42,6 +42,7 @@ pub type Result = std::result::Result<(), Error>;
 #[derive(Default)]
 struct UserApp<App> {
     user_struct: App,
+    vsync: bool,
     view_fn: Option<fn(&mut App) -> Widget<App>>,
     background: Color,
     font_context: Option<FontContext>,
@@ -73,12 +74,16 @@ impl<App> ApplicationHandler for UserWindow<App> {
             self.window = Some(window.clone());
             // Create a vello Surface
             let size = window.inner_size();
-            let surface_future = self.context.create_surface(
-                window.clone(),
-                size.width,
-                size.height,
-                wgpu::PresentMode::AutoVsync,
-            );
+
+            let mode = if self.user_app.vsync {
+                wgpu::PresentMode::AutoVsync
+            } else {
+                wgpu::PresentMode::AutoNoVsync
+            };
+
+            let surface_future =
+                self.context
+                    .create_surface(window.clone(), size.width, size.height, mode);
             let surface = pollster::block_on(surface_future).expect("Error creating surface");
 
             // Create a vello Renderer for the surface (using its device id)

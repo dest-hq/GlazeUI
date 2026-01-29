@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use crate::core::{
     Widget,
+    backend::Backend,
     color::Color,
-    renderer::backend::Backend,
     window::{level::WindowLevel, theme::Theme},
 };
 use parley::{FontContext, LayoutContext};
@@ -158,16 +158,29 @@ impl<App> Run<App> {
             false => event_loop.set_control_flow(ControlFlow::Poll),
         };
 
+        let mut context = RenderContext::new();
+        let backends = if self.backend == Backend::OpenGL {
+            wgpu::Backends::GL
+        } else {
+            wgpu::Backends::PRIMARY
+        };
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            backends,
+            ..Default::default()
+        });
+        context.instance = instance;
+
         let mut window = UserWindow::<App> {
             window_settings: self.window_settings.attributes,
             window: None,
-            context: RenderContext::new(),
+            context,
             surface: None,
             scene: Scene::new(),
             renderer: vec![],
             backend: Some(self.backend),
             user_app: UserApp {
                 user_struct: self.user_struct,
+                vsync: self.window_settings.vsync,
                 background: self.window_settings.background,
                 layout: None,
                 view_fn: Some(self.view_fn),

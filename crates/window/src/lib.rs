@@ -1,6 +1,6 @@
 use glazeui_core::{
     color::Color,
-    window::{theme::Theme, user_attention::UserAttention},
+    window::{attention::UserAttention, theme::Theme},
 };
 use std::sync::Arc;
 use winit::{
