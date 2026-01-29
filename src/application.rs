@@ -6,7 +6,8 @@ use crate::core::{
     renderer::backend::Backend,
     window::{level::WindowLevel, theme::Theme},
 };
-use glyphon::FontSystem;
+use parley::{FontContext, LayoutContext};
+use vello::{Scene, util::RenderContext};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize, Size},
     event_loop::{ControlFlow, EventLoop},
@@ -160,7 +161,10 @@ impl<App> Run<App> {
         let mut window = UserWindow::<App> {
             window_settings: self.window_settings.attributes,
             window: None,
-            wgpu_ctx: None,
+            context: RenderContext::new(),
+            surface: None,
+            scene: Scene::new(),
+            renderer: vec![],
             backend: Some(self.backend),
             user_app: UserApp {
                 user_struct: self.user_struct,
@@ -168,7 +172,8 @@ impl<App> Run<App> {
                 layout: None,
                 view_fn: Some(self.view_fn),
                 position: PhysicalPosition::new(0.0, 0.0),
-                font_system: Some(FontSystem::new()),
+                font_context: Some(FontContext::new()),
+                layout_context: Some(LayoutContext::new()),
             },
         };
         match event_loop.run_app(&mut window) {

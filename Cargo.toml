@@ -12,7 +12,6 @@ description = { workspace = true }
 winit = "0.30.12"
 wgpu = "27.0.1"
 pollster = "0.4.0"
-glyphon = "0.10.0"
 bytemuck = "1.24.0"
 image = "0.25.9"
 vello = "0.7.0"

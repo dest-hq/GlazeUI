@@ -3,14 +3,17 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use crate::control::Window;
+use crate::window::control::Window;
 pub mod align;
 pub mod color;
-pub mod control;
+mod helpers;
 pub mod id;
 pub mod padding;
 pub mod renderer;
+pub mod weight;
 pub mod window;
+
+pub use helpers::*;
 
 /// Widget with a generic Message type
 pub struct Widget<App> {

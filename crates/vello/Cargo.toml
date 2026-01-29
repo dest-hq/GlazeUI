@@ -13,3 +13,5 @@ vello.workspace = true
 parley.workspace = true
 skrifa.workspace = true
 bytemuck.workspace = true
+glazeui_core.workspace = true
+glazeui_layout.workspace = true

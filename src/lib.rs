@@ -1,7 +1,13 @@
+use ::vello::{
+    AaConfig, RenderParams, Renderer, RendererOptions, Scene,
+    peniko::color::AlphaColor,
+    util::{RenderContext, RenderSurface},
+};
 use core::{Widget, color::Color, renderer::backend::Backend};
-use glazeui_core::{WidgetElement, id::clear_counter};
-use glazeui_layout::LayoutEngine;
-use glyphon::FontSystem;
+use glazeui_core::{WidgetElement, id::clear_counter, window::control::Window};
+use glazeui_layout::{LayoutEngine, LayoutNode};
+use glazeui_vello::draw;
+use parley::{FontContext, LayoutContext};
 use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
@@ -38,21 +44,24 @@ struct UserApp<App> {
     user_struct: App,
     view_fn: Option<fn(&mut App) -> Widget<App>>,
     background: Color,
-    font_system: Option<FontSystem>,
+    font_context: Option<FontContext>,
+    layout_context: Option<LayoutContext>,
     position: PhysicalPosition<f64>,
     layout: Option<LayoutEngine<App>>,
 }
 
-#[derive(Default)]
-struct UserWindow<'window, App> {
+struct UserWindow<App> {
     window: Option<Arc<WinitWindow>>,
-    wgpu_ctx: Option<WgpuCtx<'window, App>>,
+    context: RenderContext,
+    scene: Scene,
+    surface: Option<RenderSurface<'static>>,
+    renderer: Vec<Option<Renderer>>,
     backend: Option<Backend>,
     window_settings: WindowAttributes,
     user_app: UserApp<App>,
 }
 
-impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
+impl<App> ApplicationHandler for UserWindow<App> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
             let win_attr = self.window_settings.clone();
@@ -62,13 +71,30 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                     .expect("Creating window error"),
             );
             self.window = Some(window.clone());
-            let backend = if let Some(backend) = self.backend.clone() {
-                backend
-            } else {
-                Backend::Auto
-            };
-            let wgpu_ctx = WgpuCtx::new(window.clone(), backend);
-            self.wgpu_ctx = Some(wgpu_ctx);
+            // Create a vello Surface
+            let size = window.inner_size();
+            let surface_future = self.context.create_surface(
+                window.clone(),
+                size.width,
+                size.height,
+                wgpu::PresentMode::AutoVsync,
+            );
+            let surface = pollster::block_on(surface_future).expect("Error creating surface");
+
+            // Create a vello Renderer for the surface (using its device id)
+            self.renderer
+                .resize_with(self.context.devices.len(), || None);
+            self.renderer[surface.dev_id]
+                .get_or_insert_with(|| create_vello_renderer(&self.context, &surface));
+
+            self.surface = Some(surface);
+
+            // let backend = if let Some(backend) = self.backend.clone() {
+            //     backend
+            // } else {
+            //     Backend::Auto
+            // };
+            // self.backend = Some(backend);
         }
     }
 
@@ -86,19 +112,22 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                 event_loop.exit();
             }
             WindowEvent::Resized(new_size) => {
-                if let (Some(wgpu_ctx), Some(window)) =
-                    (self.wgpu_ctx.as_mut(), self.window.as_ref())
+                if let (Some(window), Some(surface)) = (self.window.as_ref(), self.surface.as_mut())
                 {
-                    wgpu_ctx.resize((new_size.width, new_size.height));
+                    if new_size.width != 0 && new_size.height != 0 {
+                        self.context
+                            .resize_surface(surface, new_size.width, new_size.height);
+                    }
                     window.request_redraw();
                 }
             }
             WindowEvent::RedrawRequested => {
-                if let (Some(wgpu_ctx), Some(window), Some(view)) = (
-                    self.wgpu_ctx.as_mut(),
+                if let (Some(window), Some(view), Some(surface)) = (
                     self.window.as_ref(),
                     self.user_app.view_fn.as_ref(),
+                    self.surface.as_ref(),
                 ) {
+                    self.scene.reset();
                     let size = window.inner_size();
 
                     clear_counter();
@@ -106,14 +135,79 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                     let mut layout = LayoutEngine::new();
                     let ui = view(&mut self.user_app.user_struct);
 
-                    // Create vstack widget that will contain all widgets
-                    // Like if you write at widgets .show() it will be automatic put in vstack
-                    //
-
                     layout.compute(&ui, size.width as f32, size.height as f32);
-                    if let Some(font_system) = self.user_app.font_system.as_mut() {
-                        wgpu_ctx.draw(&&ui, &layout, font_system, self.user_app.background);
+                    if let (Some(font_context), Some(layout_context)) = (
+                        self.user_app.font_context.as_mut(),
+                        self.user_app.layout_context.as_mut(),
+                    ) {
+                        draw(
+                            &mut self.scene,
+                            font_context,
+                            layout_context,
+                            &mut layout,
+                            1.0,
+                            &ui,
+                        );
                     }
+
+                    // Get the window size
+                    let width = surface.config.width;
+                    let height = surface.config.height;
+
+                    // Get a handle to the device
+                    let device_handle = &self.context.devices[surface.dev_id];
+
+                    let (r, g, b, a) = (
+                        self.user_app.background.r,
+                        self.user_app.background.g,
+                        self.user_app.background.b,
+                        self.user_app.background.a,
+                    );
+
+                    // Render to a texture, which we will later copy into the surface
+                    self.renderer[surface.dev_id]
+                        .as_mut()
+                        .unwrap()
+                        .render_to_texture(
+                            &device_handle.device,
+                            &device_handle.queue,
+                            &self.scene,
+                            &surface.target_view,
+                            &RenderParams {
+                                base_color: AlphaColor::from_rgba8(r, g, b, a),
+                                width,
+                                height,
+                                antialiasing_method: AaConfig::Msaa8,
+                            },
+                        )
+                        .expect("failed to render to surface");
+
+                    // Get the surface's texture
+                    let surface_texture = surface
+                        .surface
+                        .get_current_texture()
+                        .expect("failed to get surface texture");
+
+                    // Perform the copy
+                    let mut encoder = device_handle.device.create_command_encoder(
+                        &wgpu::CommandEncoderDescriptor {
+                            label: Some("Surface Blit"),
+                        },
+                    );
+                    surface.blitter.copy(
+                        &device_handle.device,
+                        &mut encoder,
+                        &surface.target_view,
+                        &surface_texture
+                            .texture
+                            .create_view(&wgpu::TextureViewDescriptor::default()),
+                    );
+                    device_handle.queue.submit([encoder.finish()]);
+                    // Queue the texture to be presented on the surface
+                    surface_texture.present();
+
+                    device_handle.device.poll(wgpu::PollType::Poll).unwrap();
+
                     self.user_app.layout = Some(layout);
                 }
             }
@@ -154,7 +248,10 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                             if clicked {
                                                 if let Some(callback) = &child.on_click {
                                                     let mut cb = callback.borrow_mut();
-                                                    cb(&mut self.user_app.app, &mut user_window);
+                                                    cb(
+                                                        &mut self.user_app.user_struct,
+                                                        &mut user_window,
+                                                    );
                                                     window.request_redraw();
                                                 }
                                             }
@@ -162,42 +259,42 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
                                     }
 
                                     // Get widget information (position, width and height)
-                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
+                                    let layout_resolved = layout.get(child.id).unwrap();
                                     // Check if the widget was clicked
                                     let clicked =
                                         check_clicked(layout_resolved, self.user_app.position);
                                     if clicked {
                                         if let Some(callback) = &child.on_click {
                                             let mut cb = callback.borrow_mut();
-                                            cb(&mut self.user_app.app, &mut user_window);
+                                            cb(&mut self.user_app.user_struct, &mut user_window);
                                             window.request_redraw();
                                         }
                                     }
                                 }
                             } else if let WidgetElement::Container { child, .. } = &ui.element {
                                 // Get widget information (position, width and height)
-                                let layout_resolved = layout.layouts.get(&ui.id).unwrap();
+                                let layout_resolved = layout.get(ui.id).unwrap();
                                 // Check if the widget was clicked
                                 let clicked =
                                     check_clicked(layout_resolved, self.user_app.position);
                                 if clicked {
                                     if let Some(callback) = &ui.on_click {
                                         let mut cb = callback.borrow_mut();
-                                        cb(&mut self.user_app.app, &mut user_window);
+                                        cb(&mut self.user_app.user_struct, &mut user_window);
                                         window.request_redraw();
                                     }
                                 } else {
                                     // Check the child of container
 
                                     // Get widget information (position, width and height)
-                                    let layout_resolved = layout.layouts.get(&child.id).unwrap();
+                                    let layout_resolved = layout.get(child.id).unwrap();
                                     // Check if the widget was clicked
                                     let clicked =
                                         check_clicked(layout_resolved, self.user_app.position);
                                     if clicked {
                                         if let Some(callback) = &child.on_click {
                                             let mut cb = callback.borrow_mut();
-                                            cb(&mut self.user_app.app, &mut user_window);
+                                            cb(&mut self.user_app.user_struct, &mut user_window);
                                             window.request_redraw();
                                         }
                                     }
@@ -215,7 +312,7 @@ impl<'window, App> ApplicationHandler for UserWindow<'window, App> {
     }
 }
 
-fn check_clicked(layout: &ResolvedLayout, click: PhysicalPosition<f64>) -> bool {
+fn check_clicked(layout: &LayoutNode, click: PhysicalPosition<f64>) -> bool {
     if click.x >= layout.x as f64
         && click.x <= layout.x as f64 + layout.width as f64
         && click.y >= layout.y as f64
@@ -224,4 +321,13 @@ fn check_clicked(layout: &ResolvedLayout, click: PhysicalPosition<f64>) -> bool 
         return true;
     }
     false
+}
+
+/// Helper function that creates a vello `Renderer` for a given `RenderContext` and `RenderSurface`
+fn create_vello_renderer(render_cx: &RenderContext, surface: &RenderSurface<'_>) -> Renderer {
+    Renderer::new(
+        &render_cx.devices[surface.dev_id].device,
+        RendererOptions::default(),
+    )
+    .expect("Couldn't create renderer")
 }

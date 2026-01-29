@@ -8,9 +8,9 @@ use winit::{
 };
 // Crate for controling the window in runtime
 pub struct Window<'window> {
-    window: Arc<WinitWindow>,
-    background: &'window mut Color,
-    eventloop: &'window ActiveEventLoop,
+    pub window: Arc<WinitWindow>,
+    pub background: &'window mut Color,
+    pub eventloop: &'window ActiveEventLoop,
 }
 
 impl<'window> Window<'window> {

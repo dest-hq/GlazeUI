@@ -1,2 +1,2 @@
-pub mod rectangle;
-pub mod text;
+pub mod draw_rectangle;
+pub mod draw_text;
