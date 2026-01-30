@@ -24,33 +24,33 @@ Inspired by [Iced](https://github.com/iced-rs/iced) and [Egui](https://github.co
 ## Quickstart
 
 ```rust
-use glazeui::{Error, core::widget::Widget, start, vstack, widgets::text::text};
+use glazeui::{
+    application::start,
+    core::{Widget, button, text, vstack},
+};
 
-fn main() -> Result<(), Error> {
-    let app = HelloWorld {
-        text: "Hello world!".to_string(),
-    };
-
-    start(app, HelloWorld::view)
-        .title("Hello world!")
-        .size(900, 900)
-        .run()
+fn main() -> glazeui::Result {
+    let init = Clicker { count: 0 };
+    start(init, Clicker::view).title("Clicker").run()
 }
 
-struct HelloWorld {
-    text: String,
+struct Clicker {
+    count: i32,
 }
 
-impl HelloWorld {
-    fn view(&mut self) -> Widget<HelloWorld> {
-        let hello_world_text = text(&self.text)
-            .size(36)
+impl Clicker {
+    fn view(&mut self) -> Widget<Clicker> {
+        let add = button("+")
+            .label_size(24)
+            .on_click(|app: &mut Clicker, _| app.count += 1)
             .build();
-
-        vstack!(hello_world_text
-            .align(glazeui::types::Align::Center)
-            .length(glazeui::types::Length::Fill) 
-            .build()
+        let count = text(&self.count.to_string()).size(24).build();
+        let minus = button("-")
+            .label_size(24)
+            .on_click(|app: &mut Clicker, _| app.count -= 1)
+            .build();
+        vstack!(add, count, minus).build()
     }
 }
 ```
+<img width="500" height="500" alt="Clicker" src="https://github.com/user-attachments/assets/7cf293d1-ffbc-498e-928e-f5a9b00ad44a" />
