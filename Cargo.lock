@@ -880,6 +880,7 @@ name = "glazeui_layout"
 version = "0.1.1"
 dependencies = [
  "glazeui_core",
+ "image",
  "parley",
  "vello",
 ]
@@ -1376,6 +1377,13 @@ checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
  "simd-adler32",
+]
+
+[[package]]
+name = "modify_window"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
 ]
 
 [[package]]

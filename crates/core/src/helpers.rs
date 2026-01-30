@@ -1,6 +1,6 @@
 use crate::{
     Widget,
-    widget::{button::Button, container::Container, image::Image, text::Text},
+    widget::{button::Button, container::Container, image_widget::ImageWidget, text::Text},
 };
 
 pub fn text<App>(content: &str) -> Text<App> {
@@ -31,6 +31,6 @@ pub fn button<App>(label: &str) -> Button<App> {
     Button::new(label.to_string())
 }
 
-pub fn image<App>() -> Image<App> {
-    Image::new()
+pub fn image<App>() -> ImageWidget<App> {
+    ImageWidget::new()
 }

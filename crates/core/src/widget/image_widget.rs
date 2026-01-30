@@ -7,14 +7,14 @@ use vello::peniko::{Blob, ImageBrush, ImageData, ImageFormat};
 use crate::Widget;
 use crate::id::next_id;
 
-pub struct Image<App> {
+pub struct ImageWidget<App> {
     pub image: Option<ImageBrush>,
     pub width: u32,
     pub height: u32,
     _marker: PhantomData<App>,
 }
 
-impl<App> Image<App> {
+impl<App> ImageWidget<App> {
     pub fn new() -> Self {
         Self {
             image: None,

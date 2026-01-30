@@ -1,5 +1,5 @@
 [package]
-name = "glazeui_layout"
+name = "modify_window"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,4 @@ keywords.workspace = true
 description.workspace = true
 
 [dependencies]
-glazeui_core.workspace = true
-parley.workspace = true
-vello.workspace = true
-image.workspace = true
+glazeui.workspace = true
