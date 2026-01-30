@@ -17,6 +17,7 @@ image = "0.25.9"
 vello = "0.7.0"
 parley = "0.7.0"
 skrifa = "0.40.0"
+smol = "2.0.2"
 glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
 glazeui_vello = { version = "0.1.1", path = "crates/vello" }
@@ -52,3 +53,4 @@ skrifa = "0.40.0"
 bytemuck = "1.24.0"
 image = "0.25.9"
 pollster = "0.4.0"
+smol = "2.0.2"

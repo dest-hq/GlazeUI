@@ -1,11 +1,14 @@
 use glazeui::{
     application::start,
-    core::{Widget, button, color::Color, vstack, window::control::Window},
+    core::{Widget, button, color::Color, vstack},
 };
 
 fn main() -> glazeui::Result {
-    let app = ModifyWindow { maximized: false };
-    start(app, ModifyWindow::view).run()
+    let init = ModifyWindow { maximized: false };
+
+    start(init, ModifyWindow::view)
+        .title("Modify the window settings")
+        .run()
 }
 
 struct ModifyWindow {
@@ -16,45 +19,40 @@ impl ModifyWindow {
     fn view(&mut self) -> Widget<ModifyWindow> {
         let close = button("Close")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.close())
+            .size(340, 50)
+            .on_press(|_, window| window.close())
             .build();
         let background = button("Change background to white")
             .label_size(23)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| {
+            .size(340, 50)
+            .on_press(|_, window| {
                 window.background(Color::rgb(255, 255, 255));
             })
             .build();
         let change_title = button("Change title to Hi")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.title("Hi"))
+            .size(340, 50)
+            .on_press(|_, window| window.title("Hi"))
             .build();
         let off_decorations = button("Off decorations")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.decorations(false))
+            .size(340, 50)
+            .on_press(|_, window| window.decorations(false))
             .build();
         let on_decorations = button("On decorations")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.decorations(true))
-            .build();
-        let off_resizable = button("Off resizable")
-            .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.resizable(false))
+            .size(340, 50)
+            .on_press(|_, window| window.decorations(true))
             .build();
         let minimize = button("Minimize")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|_, window: &mut Window| window.minimize())
+            .size(340, 50)
+            .on_press(|_, window| window.minimize())
             .build();
         let maximize = button("Maximize")
             .label_size(25)
-            .size(340.0, 50.0)
-            .on_click(|app: &mut ModifyWindow, window: &mut Window| {
+            .size(340, 50)
+            .on_press(|app: &mut ModifyWindow, window| {
                 if app.maximized {
                     window.maximize(false);
                     app.maximized = false;
@@ -64,18 +62,23 @@ impl ModifyWindow {
                 }
             })
             .build();
+        let off_resizable = button("Off resizable")
+            .label_size(25)
+            .size(340, 50)
+            .on_press(|_, window| window.resizable(false))
+            .build();
 
         vstack!(
-            close,
             background,
             change_title,
             off_decorations,
             on_decorations,
-            off_resizable,
             minimize,
-            maximize
+            maximize,
+            off_resizable,
+            close
         )
-        .spacing(20.0)
+        .spacing(20)
         .build()
     }
 }

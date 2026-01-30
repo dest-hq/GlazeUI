@@ -7,7 +7,8 @@ use glazeui::{
 
 fn main() -> glazeui::Result {
     let init = Image {};
-    start(init, Image::view).run()
+
+    start(init, Image::view).title("Ferris Image").run()
 }
 
 struct Image {}
@@ -23,6 +24,6 @@ impl Image {
             .from_file(path, Some(300), Some(200)) // If one of size's (width, height) is set to None it will be set auto to image native size
             .unwrap()
             .build();
-        vstack!(ferris_text, image).spacing(20.0).build()
+        vstack!(ferris_text, image).spacing(20).build()
     }
 }

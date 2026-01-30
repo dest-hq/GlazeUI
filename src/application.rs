@@ -6,8 +6,7 @@ use crate::core::{
     color::Color,
     window::{level::WindowLevel, theme::Theme},
 };
-use crate::shell::Program;
-use glazeui_winit::{Application, Renderer};
+use crate::shell::{Application, Program, Renderer};
 use parley::{FontContext, LayoutContext};
 use vello::{Scene, util::RenderContext};
 use winit::{
@@ -27,7 +26,7 @@ struct WindowSettings {
     vsync: bool,
 }
 
-pub struct Run<App> {
+pub struct Run<App: 'static> {
     user_struct: App,
     window_settings: WindowSettings,
     view_fn: fn(&mut App) -> Widget<App>,
@@ -35,7 +34,7 @@ pub struct Run<App> {
     _marker: PhantomData<App>,
 }
 
-impl<App> Run<App> {
+impl<App: 'static> Run<App> {
     pub fn new(user_struct: App, view_fn: fn(&mut App) -> Widget<App>) -> Self {
         Self {
             user_struct: user_struct,

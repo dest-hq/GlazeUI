@@ -3,6 +3,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use crate::weight::TextWeight;
 use crate::window::control::Window;
 pub mod align;
 pub mod backend;
@@ -18,17 +19,16 @@ pub use helpers::*;
 use vello::peniko::ImageBrush;
 
 /// Widget with a generic Message type
-pub struct Widget<App> {
+pub struct Widget<App: 'static> {
     /// Unique Id
     pub id: u64,
 
     /// Type of UI element
     /// ['WidgetElement']
     pub element: WidgetElement<App>,
-    // /// Styles
-    // pub style: Style,
-    /// Message that will be sent on click
-    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+
+    /// Callback triggered when the widget is pressed
+    pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
 
     _marker: PhantomData<App>,
 }
@@ -38,8 +38,7 @@ impl<App> fmt::Debug for Widget<App> {
         f.debug_struct("Widget")
             .field("id", &self.id)
             .field("element", &self.element)
-            // .field("style", &self.style)
-            // .field("on_click", &self.on_click.as_ref().map(|_| "<callback>"))
+            .field("on_press", &self.on_press.as_ref().map(|_| "<callback>"))
             .finish()
     }
 }
@@ -49,49 +48,43 @@ impl<App> Clone for Widget<App> {
         Self {
             id: self.id,
             element: self.element.clone(),
-            on_click: self.on_click.clone(),
+            on_press: self.on_press.clone(),
             _marker: PhantomData,
-            // style: self.style.clone(),
-            // on_click: self.on_click.clone(),
         }
     }
 }
 
-impl<App> Widget<App> {
-    /// Create a new widget
+impl<App: 'static> Widget<App> {
+    /// Create new widget
     pub fn new(
         id: u64,
         element: WidgetElement<App>,
-        on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
-        // style: Style,
+        on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
     ) -> Self {
         Self {
             id,
             element,
-            on_click: on_click,
+            on_press: on_press,
             _marker: PhantomData,
-            // style: style,
-            // on_click,
         }
     }
 }
 
 /// Types of UI elements
-pub enum WidgetElement<App> {
-    /// A container that holds a child
+pub enum WidgetElement<App: 'static> {
+    /// A Rectangle that holds a child
     Container {
         child: Box<Widget<App>>,
-        width: f32,
-        height: f32,
+        width: u32,
+        height: u32,
         color: (u8, u8, u8, u8),
-        radius: f32,
+        radius: u32,
     },
 
     Text {
         content: String,
         font_size: u32,
-        line_height: f32,
-        // weight: TextWeight,
+        weight: TextWeight,
         color: (u8, u8, u8, u8),
     },
 
@@ -102,17 +95,17 @@ pub enum WidgetElement<App> {
     },
 
     /// Empty space
-    Spacer { height: f32, width: f32 },
+    Spacer { height: u32, width: u32 },
 
     /// Vertical list
     VStack {
-        spacing: f32,
+        spacing: i32,
         children: Vec<Widget<App>>,
     },
 
     /// Horizontal list
     HStack {
-        spacing: f32,
+        spacing: i32,
         children: Vec<Widget<App>>,
     },
 }
@@ -138,15 +131,13 @@ impl<App> fmt::Debug for WidgetElement<App> {
             WidgetElement::Text {
                 content,
                 font_size,
-                line_height,
-                // weight,
+                weight,
                 color,
             } => f
                 .debug_struct("Text")
                 .field("content", content)
                 .field("font_size", font_size)
-                .field("line_height", line_height)
-                // .field("weight", weight)
+                .field("weight", weight)
                 .field("color", color)
                 .finish(),
             WidgetElement::Spacer { width, height } => f
@@ -197,14 +188,12 @@ impl<App> Clone for WidgetElement<App> {
             WidgetElement::Text {
                 content,
                 font_size,
-                line_height,
-                // weight,
+                weight,
                 color,
             } => WidgetElement::Text {
                 content: content.clone(),
                 font_size: *font_size,
-                line_height: *line_height,
-                // weight: weight.clone(),
+                weight: weight.clone(),
                 color: *color,
             },
             WidgetElement::Container {

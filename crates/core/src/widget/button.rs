@@ -2,16 +2,16 @@ use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
 use crate::{Widget, color::Color, id::next_id, weight::TextWeight, window::control::Window};
 
-pub struct Button<App> {
+pub struct Button<App: 'static> {
     pub label: String,
     pub label_size: u32,
     pub label_weight: TextWeight,
     pub label_color: Color,
-    pub width: f32,
-    pub height: f32,
+    pub width: u32,
+    pub height: u32,
     pub color: Color,
-    pub radius: f32,
-    pub on_click: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+    pub radius: u32,
+    pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
 }
 
 impl<App> Button<App> {
@@ -21,16 +21,15 @@ impl<App> Button<App> {
             label_size: 14,
             label_weight: TextWeight::NORMAL,
             label_color: Color::rgb(255, 255, 255),
-            width: 100.0,
-            height: 50.0,
+            width: 100,
+            height: 50,
             color: Color::rgb(50, 50, 51),
-            radius: 0.0,
-            // id: None,
-            on_click: None,
+            radius: 0,
+            on_press: None,
         }
     }
 
-    pub fn size(mut self, width: f32, height: f32) -> Self {
+    pub fn size(mut self, width: u32, height: u32) -> Self {
         self.width = width;
         self.height = height;
         self
@@ -56,38 +55,42 @@ impl<App> Button<App> {
         self
     }
 
-    pub fn radius(mut self, corner_radius: f32) -> Self {
+    pub fn radius(mut self, corner_radius: u32) -> Self {
         self.radius = corner_radius;
         self
     }
 
-    pub fn on_click<F>(mut self, f: F) -> Self
+    pub fn on_press<F>(mut self, f: F) -> Self
     where
         F: FnMut(&mut App, &mut Window) + 'static,
     {
-        self.on_click = Some(Rc::new(RefCell::new(f)));
+        self.on_press = Some(Rc::new(RefCell::new(f)));
         self
     }
 
     pub fn build(self) -> Widget<App> {
+        // Button color
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
+        // Text color
         let (r2, g2, b2, a2) = (
             self.label_color.a,
             self.label_color.g,
             self.label_color.b,
             self.label_color.a,
         );
+        // Create text widget
         let child = Widget {
             id: next_id(),
             element: crate::WidgetElement::Text {
                 content: self.label,
                 font_size: self.label_size,
-                line_height: 0.0,
+                weight: self.label_weight,
                 color: (r2, g2, b2, a2),
             },
-            on_click: None,
+            on_press: None,
             _marker: PhantomData,
         };
+        // Create container widget
         Widget {
             id: next_id(),
             element: crate::WidgetElement::Container {
@@ -97,7 +100,7 @@ impl<App> Button<App> {
                 color: (r, g, b, a),
                 radius: self.radius,
             },
-            on_click: self.on_click,
+            on_press: self.on_press,
             _marker: PhantomData,
         }
     }

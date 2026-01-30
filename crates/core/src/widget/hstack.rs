@@ -3,28 +3,16 @@ use std::marker::PhantomData;
 use crate::{Widget, id::next_id};
 
 #[derive(Debug)]
-pub struct HStack<App> {
+pub struct HStack<App: 'static> {
     pub children: Vec<Widget<App>>,
-    pub spacing: f32,
-    // pub padding: Padding,
-    // pub align: Option<Align>,
-    // pub length: Option<Length>,
+    pub spacing: i32,
 }
 
 impl<App> HStack<App> {
     pub fn new(children: Vec<Widget<App>>) -> Self {
         Self {
             children,
-            spacing: 10.0,
-            // padding: Padding {
-            //     top: 0.0,
-            //     left: 0.0,
-            //     right: 0.0,
-            //     bottom: 0.0,
-            // },
-            // // id: None,
-            // align: None,
-            // length: None,
+            spacing: 10,
         }
     }
 
@@ -38,25 +26,10 @@ impl<App> HStack<App> {
         self
     }
 
-    // pub fn align(mut self, align: Align) -> Self {
-    //     self.align = Some(align);
-    //     self
-    // }
-
-    // pub fn length(mut self, length: Length) -> Self {
-    //     self.length = Some(length);
-    //     self
-    // }
-
-    pub fn spacing(mut self, spacing: f32) -> Self {
+    pub fn spacing(mut self, spacing: i32) -> Self {
         self.spacing = spacing;
         self
     }
-
-    // pub fn padding(mut self, padding: Padding) -> Self {
-    //     self.padding = padding;
-    //     self
-    // }
 
     pub fn build(self) -> Widget<App> {
         Widget {
@@ -65,7 +38,7 @@ impl<App> HStack<App> {
                 spacing: self.spacing,
                 children: self.children,
             },
-            on_click: None,
+            on_press: None,
             _marker: PhantomData,
         }
     }

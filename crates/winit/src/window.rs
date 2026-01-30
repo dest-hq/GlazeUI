@@ -13,7 +13,7 @@ use winit::{
     application::ApplicationHandler,
     dpi::PhysicalPosition,
     event::{ElementState, MouseButton, WindowEvent},
-    event_loop::{ActiveEventLoop, ControlFlow},
+    event_loop::ActiveEventLoop,
     window::WindowId,
 };
 
@@ -58,14 +58,6 @@ impl<App> ApplicationHandler for Program<App> {
         }
     }
 
-    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if event_loop.control_flow() == ControlFlow::Poll {
-            if let Some(window) = self.window.as_ref() {
-                window.request_redraw();
-            }
-        }
-    }
-
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
@@ -95,10 +87,11 @@ impl<App> ApplicationHandler for Program<App> {
                 ) {
                     // Reset scene
                     self.renderer.scene.reset();
+
                     // Get window size
                     let size = window.inner_size();
 
-                    // Clear all ids
+                    // // Remove all id's that was created in the past
                     clear_counter();
 
                     let mut layout = LayoutEngine::new();
@@ -180,6 +173,7 @@ impl<App> ApplicationHandler for Program<App> {
                             .create_view(&wgpu::TextureViewDescriptor::default()),
                     );
                     device_handle.queue.submit([encoder.finish()]);
+
                     // Queue the texture to be presented on the surface
                     surface_texture.present();
 
@@ -195,55 +189,45 @@ impl<App> ApplicationHandler for Program<App> {
                         self.application.view_fn.as_ref(),
                         self.renderer.layout.as_ref(),
                     ) {
+                        // Remove all id's that was created in the past
                         clear_counter();
+
+                        // Get the root widget
                         let ui = view(&mut self.application.user_struct);
+
+                        // Create copy of window and give that to user, with that he can edit the window settings
                         let mut user_window = Window {
                             window: self.window.as_ref().unwrap().clone(),
                             background: &mut self.application.background,
                             eventloop: event_loop,
                         };
 
+                        // Get root widget info
                         let layout_resolved = layout.get(ui.id).unwrap();
+
+                        // Check if was a click inside the root widget
                         let clicked = check_clicked(layout_resolved, self.application.position);
 
                         if clicked {
+                            // If root widget is VStack or HStack
                             if let WidgetElement::VStack { children, .. }
                             | WidgetElement::HStack { children, .. } = &ui.element
                             {
+                                // Go to every child in vstack/hstack childrens
                                 for child in children {
-                                    if let WidgetElement::HStack { children, .. }
-                                    | WidgetElement::VStack { children, .. } = &child.element
-                                    {
-                                        for child in children {
-                                            // Get widget information (position, width and height)
-                                            let layout_resolved = layout.get(child.id).unwrap();
-                                            // Check if the widget was clicked
-                                            let clicked = check_clicked(
-                                                layout_resolved,
-                                                self.application.position,
-                                            );
-                                            if clicked {
-                                                if let Some(callback) = &child.on_click {
-                                                    let mut cb = callback.borrow_mut();
-                                                    cb(
-                                                        &mut self.application.user_struct,
-                                                        &mut user_window,
-                                                    );
-                                                    window.request_redraw();
-                                                }
-                                            }
-                                        }
-                                    }
-
                                     // Get widget information (position, width and height)
                                     let layout_resolved = layout.get(child.id).unwrap();
-                                    // Check if the widget was clicked
+                                    // Check if was a click inside the widget
                                     let clicked =
                                         check_clicked(layout_resolved, self.application.position);
+
                                     if clicked {
-                                        if let Some(callback) = &child.on_click {
+                                        // If click was inside the widget and user provided a fn in on_press
+                                        if let Some(callback) = &child.on_press {
                                             let mut cb = callback.borrow_mut();
+                                            // Call on_press fn
                                             cb(&mut self.application.user_struct, &mut user_window);
+                                            // Redraw the window
                                             window.request_redraw();
                                         }
                                     }
@@ -251,29 +235,17 @@ impl<App> ApplicationHandler for Program<App> {
                             } else if let WidgetElement::Container { child, .. } = &ui.element {
                                 // Get widget information (position, width and height)
                                 let layout_resolved = layout.get(ui.id).unwrap();
-                                // Check if the widget was clicked
+                                // Check if was a click inside the widget
                                 let clicked =
                                     check_clicked(layout_resolved, self.application.position);
                                 if clicked {
-                                    if let Some(callback) = &ui.on_click {
+                                    // If click was inside the widget and user provided a fn in on_press
+                                    if let Some(callback) = &child.on_press {
                                         let mut cb = callback.borrow_mut();
+                                        // Call on_press fn
                                         cb(&mut self.application.user_struct, &mut user_window);
+                                        // Redraw the window
                                         window.request_redraw();
-                                    }
-                                } else {
-                                    // Check the child of container
-
-                                    // Get widget information (position, width and height)
-                                    let layout_resolved = layout.get(child.id).unwrap();
-                                    // Check if the widget was clicked
-                                    let clicked =
-                                        check_clicked(layout_resolved, self.application.position);
-                                    if clicked {
-                                        if let Some(callback) = &child.on_click {
-                                            let mut cb = callback.borrow_mut();
-                                            cb(&mut self.application.user_struct, &mut user_window);
-                                            window.request_redraw();
-                                        }
                                     }
                                 }
                             }

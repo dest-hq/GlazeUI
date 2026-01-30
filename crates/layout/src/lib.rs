@@ -68,7 +68,7 @@ impl<App> LayoutEngine<App> {
                     parent_y,
                     available_height,
                     available_width,
-                    *spacing,
+                    *spacing as f32,
                     font_cx,
                     layout_cx,
                 );
@@ -81,7 +81,7 @@ impl<App> LayoutEngine<App> {
                     parent_y,
                     available_height,
                     available_width,
-                    *spacing,
+                    *spacing as f32,
                     font_cx,
                     layout_cx,
                 );
@@ -90,8 +90,8 @@ impl<App> LayoutEngine<App> {
                 let spacer_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
-                    width: *width,
-                    height: *height,
+                    width: *width as f32,
+                    height: *height as f32,
                     parent_width: available_width,
                     parent_height: available_height,
                 };
@@ -106,8 +106,8 @@ impl<App> LayoutEngine<App> {
                 let container_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
-                    width: *width,
-                    height: *height,
+                    width: *width as f32,
+                    height: *height as f32,
                     parent_width: available_width,
                     parent_height: available_height,
                 };
@@ -115,7 +115,13 @@ impl<App> LayoutEngine<App> {
 
                 // Layout the child inside the container
                 self.resolve_node(
-                    child, parent_x, parent_y, *width, *height, font_cx, layout_cx,
+                    child,
+                    parent_x,
+                    parent_y,
+                    *width as f32,
+                    *height as f32,
+                    font_cx,
+                    layout_cx,
                 );
             }
             WidgetElement::Image { width, height, .. } => {
@@ -297,8 +303,8 @@ mod tests {
         let spacer_widget: Widget<App> = Widget::new(
             2,
             WidgetElement::Spacer {
-                height: 300.0,
-                width: 300.0,
+                height: 300,
+                width: 300,
             },
             None,
         );
@@ -323,8 +329,8 @@ mod tests {
         let spacer1_widget: Widget<App> = Widget::new(
             1,
             WidgetElement::Spacer {
-                height: 300.0,
-                width: 300.0,
+                height: 300,
+                width: 300,
             },
             None,
         );
@@ -332,8 +338,8 @@ mod tests {
         let spacer2_widget = Widget::new(
             2,
             WidgetElement::Spacer {
-                height: 300.0,
-                width: 300.0,
+                height: 300,
+                width: 300,
             },
             None,
         );
@@ -341,7 +347,7 @@ mod tests {
         let vstack_widget = Widget::new(
             3,
             WidgetElement::VStack {
-                spacing: 20.0,
+                spacing: 20,
                 children: vec![spacer1_widget, spacer2_widget],
             },
             None,
@@ -401,8 +407,8 @@ mod tests {
         let spacer1_widget: Widget<App> = Widget::new(
             1,
             WidgetElement::Spacer {
-                height: 300.0,
-                width: 300.0,
+                height: 300,
+                width: 300,
             },
             None,
         );
@@ -410,8 +416,8 @@ mod tests {
         let spacer2_widget = Widget::new(
             2,
             WidgetElement::Spacer {
-                height: 300.0,
-                width: 300.0,
+                height: 300,
+                width: 300,
             },
             None,
         );
@@ -419,7 +425,7 @@ mod tests {
         let hstack_widget = Widget::new(
             3,
             WidgetElement::HStack {
-                spacing: 20.0,
+                spacing: 20,
                 children: vec![spacer1_widget, spacer2_widget],
             },
             None,

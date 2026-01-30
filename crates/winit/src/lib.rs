@@ -14,7 +14,7 @@ use winit::{
 
 pub mod window;
 
-pub struct Application<App> {
+pub struct Application<App: 'static> {
     pub user_struct: App,
     pub view_fn: Option<fn(&mut App) -> Widget<App>>,
     pub background: Color,
@@ -33,7 +33,7 @@ pub struct Renderer<App> {
     pub vsync: bool,
 }
 
-pub struct Program<App> {
+pub struct Program<App: 'static> {
     pub window: Option<Arc<Window>>,
     pub window_attributes: WindowAttributes,
     pub renderer: Renderer<App>,

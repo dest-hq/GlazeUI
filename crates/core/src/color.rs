@@ -49,7 +49,7 @@ impl Color {
             r: r,
             g: g,
             b: b,
-            a: a as u8,
+            a: a.max(0.0).min(255.0) as u8,
         }
     }
 

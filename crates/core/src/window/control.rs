@@ -6,7 +6,7 @@ use std::sync::Arc;
 use winit::{
     event_loop::ActiveEventLoop, window::Theme as WinitTheme, window::Window as WinitWindow,
 };
-// Crate for controling the window in runtime
+/// Public API for changing window settings in runtime
 pub struct Window<'window> {
     pub window: Arc<WinitWindow>,
     pub background: &'window mut Color,
