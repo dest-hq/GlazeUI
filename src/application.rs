@@ -6,6 +6,8 @@ use crate::core::{
     color::Color,
     window::{level::WindowLevel, theme::Theme},
 };
+use crate::shell::Program;
+use glazeui_winit::{Application, Renderer};
 use parley::{FontContext, LayoutContext};
 use vello::{Scene, util::RenderContext};
 use winit::{
@@ -13,8 +15,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Theme as WinitTheme, WindowAttributes, WindowLevel as WinitWindowLevel},
 };
-
-use crate::{UserApp, UserWindow};
 
 // Helper to start app
 pub fn start<App>(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Run<App> {
@@ -170,25 +170,28 @@ impl<App> Run<App> {
         });
         context.instance = instance;
 
-        let mut window = UserWindow::<App> {
-            window_settings: self.window_settings.attributes,
+        let mut window = Program::<App> {
             window: None,
-            context,
-            surface: None,
-            scene: Scene::new(),
-            renderer: vec![],
-            backend: Some(self.backend),
-            user_app: UserApp {
-                user_struct: self.user_struct,
-                vsync: self.window_settings.vsync,
-                background: self.window_settings.background,
-                layout: None,
-                view_fn: Some(self.view_fn),
-                position: PhysicalPosition::new(0.0, 0.0),
+            window_attributes: self.window_settings.attributes,
+            renderer: Renderer {
+                context,
+                scene: Scene::new(),
+                surface: None,
+                renderers: vec![],
+                backend: Some(self.backend),
                 font_context: Some(FontContext::new()),
                 layout_context: Some(LayoutContext::new()),
+                layout: None,
+                vsync: self.window_settings.vsync,
+            },
+            application: Application {
+                user_struct: self.user_struct,
+                view_fn: Some(self.view_fn),
+                background: self.window_settings.background,
+                position: PhysicalPosition::new(0.0, 0.0),
             },
         };
+
         match event_loop.run_app(&mut window) {
             Ok(()) => return Ok(()),
             Err(e) => return Err(e),

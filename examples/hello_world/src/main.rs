@@ -32,7 +32,10 @@ impl HelloWorld {
         let container2 = container(hello_world_text.clone())
             .size(200.0, 200.0)
             .build();
-        let container3 = container(hello_world_text).size(200.0, 200.0).build();
+        let container3 = container(hello_world_text)
+            .size(200.0, 200.0)
+            .on_click(|_, _| println!("Hello"))
+            .build();
 
         vstack!(container2, container3)
             .spacing(20.0) // VStack is used to vertically stack multiple elements vertically, but since we have only 1 element a HStack could also be used here

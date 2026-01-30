@@ -41,8 +41,6 @@ pub fn draw_text(
     // Build the builder into a Layout
     let layout: Layout<[u8; 4]> = builder.build(&text);
 
-    println!("lines: {}", layout.lines().count());
-
     for line in layout.lines() {
         for item in line.items() {
             let PositionedLayoutItem::GlyphRun(glyph_run) = item else {

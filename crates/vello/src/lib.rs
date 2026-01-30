@@ -15,7 +15,6 @@ pub fn draw<App>(
     scale: f32,
     widget: &Widget<App>,
 ) {
-    println!("Draw");
     let widget_layout = layout_engine.get(widget.id).unwrap();
 
     // Check if widget is text
@@ -26,7 +25,6 @@ pub fn draw<App>(
         ..
     } = &widget.element
     {
-        println!("text");
         let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
         draw_text(
             scene,

@@ -10,3 +10,9 @@ description.workspace = true
 
 [dependencies]
 winit.workspace = true
+vello.workspace = true
+glazeui_core.workspace = true
+parley.workspace = true
+glazeui_layout.workspace = true
+pollster.workspace = true
+glazeui_vello.workspace = true

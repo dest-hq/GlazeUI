@@ -47,7 +47,7 @@ impl<App> Clone for Widget<App> {
         Self {
             id: self.id,
             element: self.element.clone(),
-            on_click: None,
+            on_click: self.on_click.clone(),
             _marker: PhantomData,
             // style: self.style.clone(),
             // on_click: self.on_click.clone(),
