@@ -1,5 +1,3 @@
-use vello::peniko::ImageBrush;
-
 use crate::{
     Widget,
     widget::{button::Button, container::Container, image::Image, text::Text},
