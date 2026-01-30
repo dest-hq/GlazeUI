@@ -1,6 +1,6 @@
 # Hello World example
 
-This is a basic example which just shows "Hello World!" in the center of the window and does nothing
+This is a basic example that just shows "Hello World!" in the top left corner of the window and does nothing
 
 ## Running
 
@@ -12,5 +12,5 @@ cargo run --release --package hello_world
 
 ## Screenshot
 
-<img width="500" height="500" alt="Hello World" src="https://github.com/user-attachments/assets/4337dba9-8495-44a2-9872-be23645ebcd4" />
+<img width="500" height="500" alt="Hello World" src="https://github.com/user-attachments/assets/ac66f5c4-6e38-42e6-a9c0-d86a0da7bad3" />
 
