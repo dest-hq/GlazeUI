@@ -11,7 +11,6 @@ fn main() -> glazeui::Result {
     start(app, HelloWorld::view)
         .title("Hello world!")
         .size(900, 900)
-        .backend(glazeui::core::backend::Backend::OpenGL)
         .run()
     // This starts the app with the title of "Hello world!" and with the width and height of 900 pixels
     // P.S. You can add ".vsync(false)" between "start(app)" and ".run()" to disable VSync which will make your GPU draw the app as fast as it can
