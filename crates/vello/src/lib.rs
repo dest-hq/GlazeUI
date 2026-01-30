@@ -29,7 +29,7 @@ pub fn draw<App>(
         draw_text(
             scene,
             widget_layout.x as f64,
-            widget_layout.x as f64,
+            widget_layout.y as f64,
             font_context,
             content,
             color,

@@ -25,10 +25,10 @@ pub fn draw_text(
     let mut builder = layout_cx.ranged_builder(font_cx, &text, scale, true);
 
     // Text Colors
-    let r = (text_color.components[0]) as u8;
-    let g = (text_color.components[1]) as u8;
-    let b = (text_color.components[2]) as u8;
-    let a = (text_color.components[3]) as u8;
+    let r = (text_color.components[0] * 255.0) as u8;
+    let g = (text_color.components[1] * 255.0) as u8;
+    let b = (text_color.components[2] * 255.0) as u8;
+    let a = (text_color.components[3] * 255.0) as u8;
 
     // Set default text colour styles
     builder.push_default(StyleProperty::Brush([r, g, b, a]));
@@ -39,7 +39,8 @@ pub fn draw_text(
     builder.push_default(StyleProperty::FontSize(font_size));
 
     // Build the builder into a Layout
-    let layout: Layout<[u8; 4]> = builder.build(&text);
+    let mut layout: Layout<[u8; 4]> = builder.build(&text);
+    layout.break_all_lines(None);
 
     for line in layout.lines() {
         for item in line.items() {
