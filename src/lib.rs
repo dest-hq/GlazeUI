@@ -9,9 +9,6 @@ pub mod vello {
 pub mod layout {
     pub use glazeui_layout::*;
 }
-pub mod widgets {
-    pub use glazeui_widget::*;
-}
 pub mod core {
     pub use glazeui_core::*;
 }

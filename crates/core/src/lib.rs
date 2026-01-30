@@ -11,6 +11,7 @@ mod helpers;
 pub mod id;
 pub mod padding;
 pub mod weight;
+pub mod widget;
 pub mod window;
 
 pub use helpers::*;

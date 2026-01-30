@@ -21,7 +21,6 @@ glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
 glazeui_vello = { version = "0.1.1", path = "crates/vello" }
 glazeui_window = { version = "0.1.1", path = "crates/window" }
-glazeui_widget = { version = "0.1.1", path = "crates/widget" }
 glazeui_layout = { version = "0.1.1", path = "crates/layout" }
 
 [workspace]
@@ -44,7 +43,6 @@ glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
 glazeui_vello = { version = "0.1.1", path = "crates/vello" }
 glazeui_window = { version = "0.1.1", path = "crates/window" }
-glazeui_widget = { version = "0.1.1", path = "crates/widget" }
 glazeui_layout = { version = "0.1.1", path = "crates/layout" }
 winit = "0.30.12"
 wgpu = "27.0.1"

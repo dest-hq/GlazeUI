@@ -841,7 +841,6 @@ dependencies = [
  "glazeui_core",
  "glazeui_layout",
  "glazeui_vello",
- "glazeui_widget",
  "glazeui_window",
  "glazeui_winit",
  "image",
@@ -880,10 +879,6 @@ dependencies = [
  "skrifa 0.40.0",
  "vello",
 ]
-
-[[package]]
-name = "glazeui_widget"
-version = "0.1.1"
 
 [[package]]
 name = "glazeui_window"
