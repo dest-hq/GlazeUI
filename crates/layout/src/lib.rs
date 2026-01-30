@@ -118,6 +118,19 @@ impl<App> LayoutEngine<App> {
                     child, parent_x, parent_y, *width, *height, font_cx, layout_cx,
                 );
             }
+            WidgetElement::Image { width, height, .. } => {
+                let width = *width as f32;
+                let height = *height as f32;
+                let image_node = LayoutNode {
+                    x: parent_x,
+                    y: parent_y,
+                    width: width.min(available_width),
+                    height: height,
+                    parent_height: available_height,
+                    parent_width: available_width,
+                };
+                self.nodes.insert(node.id, image_node);
+            }
             WidgetElement::Text {
                 content, font_size, ..
             } => {

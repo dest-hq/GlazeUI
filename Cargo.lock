@@ -685,6 +685,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferris_image"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

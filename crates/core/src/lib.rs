@@ -15,6 +15,7 @@ pub mod widget;
 pub mod window;
 
 pub use helpers::*;
+use vello::peniko::ImageBrush;
 
 /// Widget with a generic Message type
 pub struct Widget<App> {
@@ -94,6 +95,12 @@ pub enum WidgetElement<App> {
         color: (u8, u8, u8, u8),
     },
 
+    Image {
+        image: ImageBrush,
+        width: u32,
+        height: u32,
+    },
+
     /// Empty space
     Spacer { height: f32, width: f32 },
 
@@ -147,6 +154,16 @@ impl<App> fmt::Debug for WidgetElement<App> {
                 .field("width", width)
                 .field("height", height)
                 .finish(),
+            WidgetElement::Image {
+                image,
+                width,
+                height,
+            } => f
+                .debug_struct("image")
+                .field("image", image)
+                .field("width", width)
+                .field("height", height)
+                .finish(),
             WidgetElement::VStack { spacing, children } => f
                 .debug_struct("VStack")
                 .field("spacing", spacing)
@@ -167,6 +184,15 @@ impl<App> Clone for WidgetElement<App> {
             WidgetElement::Spacer { height, width } => WidgetElement::Spacer {
                 height: height.clone(),
                 width: width.clone(),
+            },
+            WidgetElement::Image {
+                image,
+                width,
+                height,
+            } => WidgetElement::Image {
+                image: image.clone(),
+                width: *width,
+                height: *height,
             },
             WidgetElement::Text {
                 content,

@@ -3,7 +3,9 @@ use glazeui_layout::LayoutEngine;
 use parley::{FontContext, LayoutContext};
 use vello::{Scene, peniko::color::AlphaColor};
 
-use crate::widgets::{draw_rectangle::draw_rectangle, draw_text::draw_text};
+use crate::widgets::{
+    draw_image::draw_image, draw_rectangle::draw_rectangle, draw_text::draw_text,
+};
 
 pub mod widgets;
 
@@ -38,6 +40,11 @@ pub fn draw<App>(
             scale,
             layout_context,
         );
+    }
+
+    // Check if widget is image
+    if let WidgetElement::Image { image, .. } = &widget.element {
+        draw_image(scene, image, widget_layout.x as f64, widget_layout.y as f64);
     }
 
     // Check if widget is container
