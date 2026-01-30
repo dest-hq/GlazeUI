@@ -54,3 +54,6 @@ impl Clicker {
 }
 ```
 <img width="500" height="500" alt="Clicker" src="https://github.com/user-attachments/assets/7cf293d1-ffbc-498e-928e-f5a9b00ad44a" />
+
+## License
+This library is dual licensed with both the MIT license ([LICENSE-MIT](LICENSE-MIT)) and the Apache-2.0 license ([LICENSE-APACHE](LICENSE-APACHE)) meaning that you can use either the MIT license or the Apache-2.0 license, depending on your needs
