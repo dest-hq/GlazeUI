@@ -1,6 +1,6 @@
 # Ferris Image example
 
-This is a basic example that just shows ferris image
+This is a basic example that just shows the text "ferris" and ferris image
 
 ## Running
 
