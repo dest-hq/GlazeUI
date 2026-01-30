@@ -1,6 +1,6 @@
 use crate::{
     Widget,
-    widget::{container::Container, text::Text},
+    widget::{button::Button, container::Container, text::Text},
 };
 
 pub fn text<App>(content: &str) -> Text<App> {
@@ -25,4 +25,8 @@ macro_rules! hstack {
 
 pub fn container<App>(child: Widget<App>) -> Container<App> {
     Container::new(child)
+}
+
+pub fn button<App>(label: &str) -> Button<App> {
+    Button::new(label.to_string())
 }

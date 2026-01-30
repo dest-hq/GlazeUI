@@ -86,10 +86,12 @@ impl<App> ApplicationHandler for Program<App> {
                 }
             }
             WindowEvent::RedrawRequested => {
-                if let (Some(window), Some(view), Some(surface)) = (
+                if let (Some(window), Some(view), Some(surface), Some(font_cx), Some(layout_cx)) = (
                     self.window.as_ref(),
                     self.application.view_fn.as_ref(),
                     self.renderer.surface.as_ref(),
+                    self.renderer.font_context.as_mut(),
+                    self.renderer.layout_context.as_mut(),
                 ) {
                     // Reset scene
                     self.renderer.scene.reset();
@@ -103,7 +105,13 @@ impl<App> ApplicationHandler for Program<App> {
                     let ui = view(&mut self.application.user_struct);
 
                     // Compute layout
-                    layout.compute(&ui, size.width as f32, size.height as f32);
+                    layout.compute(
+                        &ui,
+                        size.width as f32,
+                        size.height as f32,
+                        font_cx,
+                        layout_cx,
+                    );
 
                     if let (Some(font_context), Some(layout_context)) = (
                         self.renderer.font_context.as_mut(),

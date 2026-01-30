@@ -34,7 +34,7 @@ pub fn draw_text(
     builder.push_default(StyleProperty::Brush([r, g, b, a]));
 
     // Set default font family
-    builder.push_default(GenericFamily::SansSerif);
+    builder.push_default(GenericFamily::SystemUi);
     builder.push_default(LineHeight::FontSizeRelative(1.3));
     builder.push_default(StyleProperty::FontSize(font_size));
 

@@ -1,10 +1,9 @@
 use glazeui::{
-    Result,
     application::start,
-    core::{Widget, container, text, vstack},
+    core::{Widget, text, vstack},
 };
 
-fn main() -> Result {
+fn main() -> glazeui::Result {
     let app = HelloWorld {
         text: "Hello world!".to_string(),
     };

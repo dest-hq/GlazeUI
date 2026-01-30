@@ -1,6 +1,10 @@
 use std::{collections::HashMap, marker::PhantomData};
 
 use glazeui_core::{Widget, WidgetElement};
+use parley::{FontContext, LayoutContext};
+
+use crate::measure::text::measure_text;
+pub mod measure;
 
 #[derive(Clone, Debug)]
 pub struct LayoutNode {
@@ -32,9 +36,16 @@ impl<App> LayoutEngine<App> {
     }
 
     /// Compute layout
-    pub fn compute(&mut self, root: &Widget<App>, width: f32, height: f32) {
+    pub fn compute(
+        &mut self,
+        root: &Widget<App>,
+        width: f32,
+        height: f32,
+        font_cx: &mut FontContext,
+        layout_cx: &mut LayoutContext,
+    ) {
         // Start at (0, 0) with available window size
-        self.resolve_node(root, 0.0, 0.0, width, height);
+        self.resolve_node(root, 0.0, 0.0, width, height, font_cx, layout_cx);
     }
 
     /// Resolve layout for a node and its children
@@ -45,6 +56,8 @@ impl<App> LayoutEngine<App> {
         parent_y: f32,
         available_width: f32,
         available_height: f32,
+        font_cx: &mut FontContext,
+        layout_cx: &mut LayoutContext,
     ) {
         match &node.element {
             WidgetElement::VStack { spacing, children } => {
@@ -56,6 +69,8 @@ impl<App> LayoutEngine<App> {
                     available_height,
                     available_width,
                     *spacing,
+                    font_cx,
+                    layout_cx,
                 );
             }
             WidgetElement::HStack { spacing, children } => {
@@ -67,6 +82,8 @@ impl<App> LayoutEngine<App> {
                     available_height,
                     available_width,
                     *spacing,
+                    font_cx,
+                    layout_cx,
                 );
             }
             WidgetElement::Spacer { height, width } => {
@@ -97,24 +114,21 @@ impl<App> LayoutEngine<App> {
                 self.nodes.insert(node.id, container_node);
 
                 // Layout the child inside the container
-                self.resolve_node(child, parent_x, parent_y, *width, *height);
+                self.resolve_node(
+                    child, parent_x, parent_y, *width, *height, font_cx, layout_cx,
+                );
             }
             WidgetElement::Text {
-                content,
-                font_size,
-                line_height,
-                ..
+                content, font_size, ..
             } => {
-                // Will improve later
-                let estimated_width = content.len() as f32 * (*font_size as f32 * 0.6);
-                let estimated_height =
-                    *font_size as f32 * (content.lines().count() as f32 * line_height);
+                let (width, height) =
+                    measure_text(font_cx, content, *font_size as f32, 1.0, layout_cx);
 
                 let text_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
-                    width: estimated_width.min(available_width),
-                    height: estimated_height,
+                    width: width.min(available_width),
+                    height: height,
                     parent_height: available_height,
                     parent_width: available_width,
                 };
@@ -133,6 +147,8 @@ impl<App> LayoutEngine<App> {
         available_height: f32,
         available_width: f32,
         spacing: f32,
+        font_cx: &mut FontContext,
+        layout_cx: &mut LayoutContext,
     ) {
         let mut current_y = parent_y;
         let mut total_height = 0.0;
@@ -147,6 +163,8 @@ impl<App> LayoutEngine<App> {
                 current_y,
                 available_width,
                 available_height,
+                font_cx,
+                layout_cx,
             );
 
             // Get the child computed height
@@ -195,6 +213,8 @@ impl<App> LayoutEngine<App> {
         available_height: f32,
         available_width: f32,
         spacing: f32,
+        font_cx: &mut FontContext,
+        layout_cx: &mut LayoutContext,
     ) {
         let mut current_x = parent_x;
         let mut total_width = 0.0;
@@ -209,6 +229,8 @@ impl<App> LayoutEngine<App> {
                 parent_y,
                 available_width,
                 available_height,
+                font_cx,
+                layout_cx,
             );
 
             // Get the child computed width
@@ -256,6 +278,8 @@ mod tests {
 
     #[test]
     fn it_works() {
+        let mut font_cx = FontContext::new();
+        let mut layout_cx = LayoutContext::new();
         // Spacer test
         let spacer_widget: Widget<App> = Widget::new(
             2,
@@ -266,7 +290,7 @@ mod tests {
             None,
         );
         let mut layout: LayoutEngine<App> = LayoutEngine::new();
-        layout.compute(&spacer_widget, 700.0, 700.0);
+        layout.compute(&spacer_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
         let node_info = layout.get(2).unwrap();
 
         // Verify parent size
@@ -311,7 +335,7 @@ mod tests {
         );
 
         let mut layout = LayoutEngine::new();
-        layout.compute(&vstack_widget, 700.0, 700.0);
+        layout.compute(&vstack_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
         let node_info = layout.get(3).unwrap();
 
         // Verify parent size
@@ -389,7 +413,7 @@ mod tests {
         );
 
         let mut layout = LayoutEngine::new();
-        layout.compute(&hstack_widget, 700.0, 700.0);
+        layout.compute(&hstack_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
         let node_info = layout.get(3).unwrap();
 
         // Verify parent size

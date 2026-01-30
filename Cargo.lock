@@ -369,6 +369,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "clicker"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -866,6 +873,8 @@ name = "glazeui_layout"
 version = "0.1.1"
 dependencies = [
  "glazeui_core",
+ "parley",
+ "vello",
 ]
 
 [[package]]
