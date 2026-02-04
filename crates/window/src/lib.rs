@@ -1,5 +1,5 @@
 use glazeui_core::{
-    color::Color,
+    Color,
     window::{attention::UserAttention, theme::Theme},
 };
 use std::sync::Arc;

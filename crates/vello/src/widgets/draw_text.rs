@@ -1,6 +1,7 @@
+use glazeui_core::TextWeight;
 use parley::{
-    FontContext, GenericFamily, Layout, LayoutContext, LineHeight, PositionedLayoutItem,
-    StyleProperty,
+    FontContext, FontWeight, GenericFamily, Layout, LayoutContext, LineHeight,
+    PositionedLayoutItem, StyleProperty,
 };
 use vello::{
     Glyph, Scene,
@@ -15,6 +16,7 @@ pub fn draw_text(
     font_cx: &mut FontContext,
     text: &str,
     text_color: Color,
+    text_weight: &TextWeight,
     font_size: f32,
     scale: f32,
     layout_cx: &mut LayoutContext,
@@ -23,6 +25,18 @@ pub fn draw_text(
 
     // Create a RangedBuilder
     let mut builder = layout_cx.ranged_builder(font_cx, &text, scale, true);
+
+    let weight = match text_weight {
+        TextWeight::THIN => 100.0,
+        TextWeight::EXTRALIGHT => 200.0,
+        TextWeight::LIGHT => 300.0,
+        TextWeight::NORMAL => 400.0,
+        TextWeight::MEDIUM => 500.0,
+        TextWeight::SEMIBOLD => 600.0,
+        TextWeight::BOLD => 700.0,
+        TextWeight::EXTRABOLD => 800.0,
+        TextWeight::BLACK => 900.0,
+    };
 
     // Text Colors
     let r = (text_color.components[0] * 255.0) as u8;
@@ -35,6 +49,7 @@ pub fn draw_text(
 
     // Set default font family
     builder.push_default(GenericFamily::SystemUi);
+    builder.push_default(StyleProperty::FontWeight(FontWeight::new(weight)));
     builder.push_default(LineHeight::FontSizeRelative(1.3));
     builder.push_default(StyleProperty::FontSize(font_size));
 

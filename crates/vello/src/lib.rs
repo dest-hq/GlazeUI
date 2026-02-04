@@ -23,8 +23,8 @@ pub fn draw<App>(
     if let WidgetElement::Text {
         content,
         font_size,
+        weight,
         color,
-        ..
     } = &widget.element
     {
         let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
@@ -36,6 +36,7 @@ pub fn draw<App>(
             font_context,
             content,
             color,
+            weight,
             *font_size as f32,
             scale,
             layout_context,
@@ -50,13 +51,14 @@ pub fn draw<App>(
     // Check if widget is container
     if let WidgetElement::Container {
         child,
-        width,
-        height,
         color,
         radius,
     } = &widget.element
     {
         let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
+
+        let width = widget.style.width as f64;
+        let height = widget.style.height as f64;
 
         // Draw container (rectangle)
         draw_rectangle(
@@ -65,8 +67,8 @@ pub fn draw<App>(
             color,
             widget_layout.x as f64,
             widget_layout.y as f64,
-            *width as f64,
-            *height as f64,
+            width,
+            height,
         );
 
         // Draw container child

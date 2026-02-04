@@ -3,20 +3,28 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use crate::weight::TextWeight;
+use crate::style::Style;
 use crate::window::control::Window;
-pub mod align;
-pub mod backend;
-pub mod color;
+mod align;
+mod backend;
+mod color;
 mod helpers;
 pub mod id;
-pub mod padding;
-pub mod weight;
+mod margin;
+mod padding;
+pub mod style;
+mod weight;
 pub mod widget;
 pub mod window;
 
+pub use align::*;
+pub use backend::*;
+pub use color::*;
 pub use helpers::*;
+pub use margin::*;
+pub use padding::*;
 use vello::peniko::ImageBrush;
+pub use weight::*;
 
 /// Widget with a generic Message type
 pub struct Widget<App: 'static> {
@@ -29,6 +37,9 @@ pub struct Widget<App: 'static> {
 
     /// Callback triggered when the widget is pressed
     pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+
+    /// Style of element for layout engine
+    pub style: Style,
 
     _marker: PhantomData<App>,
 }
@@ -49,22 +60,7 @@ impl<App> Clone for Widget<App> {
             id: self.id,
             element: self.element.clone(),
             on_press: self.on_press.clone(),
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<App: 'static> Widget<App> {
-    /// Create new widget
-    pub fn new(
-        id: u64,
-        element: WidgetElement<App>,
-        on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
-    ) -> Self {
-        Self {
-            id,
-            element,
-            on_press: on_press,
+            style: self.style.clone(),
             _marker: PhantomData,
         }
     }
@@ -75,8 +71,6 @@ pub enum WidgetElement<App: 'static> {
     /// A Rectangle that holds a child
     Container {
         child: Box<Widget<App>>,
-        width: u32,
-        height: u32,
         color: (u8, u8, u8, u8),
         radius: u32,
     },
@@ -90,24 +84,20 @@ pub enum WidgetElement<App: 'static> {
 
     Image {
         image: ImageBrush,
-        width: u32,
-        height: u32,
     },
-
-    /// Empty space
-    Spacer { height: u32, width: u32 },
 
     /// Vertical list
     VStack {
-        spacing: i32,
         children: Vec<Widget<App>>,
     },
 
     /// Horizontal list
     HStack {
-        spacing: i32,
         children: Vec<Widget<App>>,
     },
+
+    /// Custom element
+    Custom {},
 }
 
 // Debug для WidgetElement
@@ -116,15 +106,11 @@ impl<App> fmt::Debug for WidgetElement<App> {
         match self {
             WidgetElement::Container {
                 child,
-                width,
-                height,
                 color,
                 radius,
             } => f
                 .debug_struct("Container")
                 .field("child", child)
-                .field("width", width)
-                .field("height", height)
                 .field("color", color)
                 .field("radius", radius)
                 .finish(),
@@ -140,31 +126,18 @@ impl<App> fmt::Debug for WidgetElement<App> {
                 .field("weight", weight)
                 .field("color", color)
                 .finish(),
-            WidgetElement::Spacer { width, height } => f
-                .debug_struct("Spacer")
-                .field("width", width)
-                .field("height", height)
-                .finish(),
-            WidgetElement::Image {
-                image,
-                width,
-                height,
-            } => f
-                .debug_struct("image")
-                .field("image", image)
-                .field("width", width)
-                .field("height", height)
-                .finish(),
-            WidgetElement::VStack { spacing, children } => f
+            WidgetElement::Image { image } => {
+                f.debug_struct("image").field("image", image).finish()
+            }
+            WidgetElement::VStack { children } => f
                 .debug_struct("VStack")
-                .field("spacing", spacing)
                 .field("children", children)
                 .finish(),
-            WidgetElement::HStack { spacing, children } => f
+            WidgetElement::HStack { children } => f
                 .debug_struct("HStack")
-                .field("spacing", spacing)
                 .field("children", children)
                 .finish(),
+            WidgetElement::Custom {} => f.debug_struct("Custom").finish(),
         }
     }
 }
@@ -172,18 +145,8 @@ impl<App> fmt::Debug for WidgetElement<App> {
 impl<App> Clone for WidgetElement<App> {
     fn clone(&self) -> Self {
         match self {
-            WidgetElement::Spacer { height, width } => WidgetElement::Spacer {
-                height: height.clone(),
-                width: width.clone(),
-            },
-            WidgetElement::Image {
-                image,
-                width,
-                height,
-            } => WidgetElement::Image {
+            WidgetElement::Image { image } => WidgetElement::Image {
                 image: image.clone(),
-                width: *width,
-                height: *height,
             },
             WidgetElement::Text {
                 content,
@@ -198,40 +161,20 @@ impl<App> Clone for WidgetElement<App> {
             },
             WidgetElement::Container {
                 child,
-                width,
-                height,
                 color,
                 radius,
             } => WidgetElement::Container {
                 child: Box::new((**child).clone()),
-                width: *width,
-                height: *height,
                 color: *color,
                 radius: *radius,
             },
-            WidgetElement::VStack { children, spacing } => WidgetElement::VStack {
+            WidgetElement::VStack { children } => WidgetElement::VStack {
                 children: children.iter().map(|c| c.clone()).collect(),
-                spacing: *spacing,
             },
-            WidgetElement::HStack { children, spacing } => WidgetElement::HStack {
+            WidgetElement::HStack { children } => WidgetElement::HStack {
                 children: children.iter().map(|c| c.clone()).collect(),
-                spacing: *spacing,
             },
+            WidgetElement::Custom {} => WidgetElement::Custom {},
         }
     }
 }
-
-// pub fn add(left: u64, right: u64) -> u64 {
-//     left + right
-// }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }

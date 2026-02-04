@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use glazeui_core::{Widget, backend::Backend, color::Color};
+use glazeui_core::{Backend, Color, Widget};
 use glazeui_layout::LayoutEngine;
 use parley::{FontContext, LayoutContext};
 use vello::{

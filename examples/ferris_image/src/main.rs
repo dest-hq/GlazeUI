@@ -1,8 +1,10 @@
+// Right now, this example doesn't work, because i didnt implement image in wgpu yet
+
 use std::path::Path;
 
 use glazeui::{
     application::start,
-    core::{Widget, image, text, vstack},
+    core::{image, text, vstack, Widget},
 };
 
 fn main() -> glazeui::Result {

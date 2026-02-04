@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Widget, id::next_id};
+use crate::{Widget, id::next_id, style::Style};
 
 pub struct Spacer<App> {
     pub width: u32,
@@ -23,13 +23,19 @@ impl<App> Spacer<App> {
     }
 
     pub fn build(self) -> Widget<App> {
-        return Widget::new(
-            next_id(),
-            crate::WidgetElement::Spacer {
-                width: self.width,
-                height: self.height,
-            },
-            None,
-        );
+        // Spacer style
+        let spacer_style = Style {
+            width: self.width,
+            height: self.height,
+            ..Default::default()
+        };
+
+        Widget {
+            id: next_id(),
+            element: crate::WidgetElement::Custom {},
+            on_press: None,
+            style: spacer_style,
+            _marker: PhantomData,
+        }
     }
 }

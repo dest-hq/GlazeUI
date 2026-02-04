@@ -12,4 +12,3 @@ description.workspace = true
 vello.workspace = true
 image.workspace = true
 winit.workspace = true
-smol.workspace = true

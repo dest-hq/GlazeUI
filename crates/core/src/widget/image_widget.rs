@@ -4,13 +4,15 @@ use std::{marker::PhantomData, path::Path};
 use image::imageops::FilterType;
 use vello::peniko::{Blob, ImageBrush, ImageData, ImageFormat};
 
-use crate::Widget;
 use crate::id::next_id;
+use crate::style::Style;
+use crate::{Margin, Widget};
 
 pub struct ImageWidget<App> {
     pub image: Option<ImageBrush>,
     pub width: u32,
     pub height: u32,
+    pub margin: Margin,
     _marker: PhantomData<App>,
 }
 
@@ -20,8 +22,14 @@ impl<App> ImageWidget<App> {
             image: None,
             width: 0,
             height: 0,
+            margin: Margin::new(),
             _marker: PhantomData,
         }
+    }
+
+    pub fn margin(mut self, margin: Margin) -> Self {
+        self.margin = margin;
+        self
     }
 
     fn decode_image(
@@ -82,14 +90,21 @@ impl<App> ImageWidget<App> {
     }
 
     pub fn build(self) -> Widget<App> {
-        return Widget::new(
-            next_id(),
-            crate::WidgetElement::Image {
+        let image_style = Style {
+            width: self.width,
+            height: self.height,
+            margin: self.margin,
+            ..Default::default()
+        };
+
+        Widget {
+            id: next_id(),
+            element: crate::WidgetElement::Image {
                 image: self.image.unwrap(),
-                width: self.width,
-                height: self.height,
             },
-            None,
-        );
+            on_press: None,
+            style: image_style,
+            _marker: PhantomData,
+        }
     }
 }

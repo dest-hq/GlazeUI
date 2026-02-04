@@ -1,9 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::core::{
-    Widget,
-    backend::Backend,
-    color::Color,
+    Backend, Color, Widget,
     window::{level::WindowLevel, theme::Theme},
 };
 use crate::shell::{Application, Program, Renderer};
@@ -158,11 +156,14 @@ impl<App: 'static> Run<App> {
         };
 
         let mut context = RenderContext::new();
-        let backends = if self.backend == Backend::OpenGL {
-            wgpu::Backends::GL
-        } else {
-            wgpu::Backends::PRIMARY
+        let backends = match self.backend {
+            Backend::Auto => wgpu::Backends::PRIMARY,
+            Backend::Vulkan => wgpu::Backends::VULKAN,
+            Backend::DX12 => wgpu::Backends::DX12,
+            Backend::Metal => wgpu::Backends::METAL,
+            Backend::OpenGL => wgpu::Backends::GL,
         };
+
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends,
             ..Default::default()

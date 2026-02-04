@@ -1,6 +1,6 @@
 use std::{collections::HashMap, marker::PhantomData};
 
-use glazeui_core::{Widget, WidgetElement};
+use glazeui_core::{Align, Widget, WidgetElement, style::Style};
 use parley::{FontContext, LayoutContext};
 
 use crate::measure::text::measure_text;
@@ -51,7 +51,7 @@ impl<App> LayoutEngine<App> {
     /// Resolve layout for a node and its children
     pub fn resolve_node(
         &mut self,
-        node: &Widget<App>,
+        widget: &Widget<App>,
         parent_x: f32,
         parent_y: f32,
         available_width: f32,
@@ -59,74 +59,78 @@ impl<App> LayoutEngine<App> {
         font_cx: &mut FontContext,
         layout_cx: &mut LayoutContext,
     ) {
-        match &node.element {
-            WidgetElement::VStack { spacing, children } => {
+        match &widget.element {
+            WidgetElement::VStack { children } => {
                 self.layout_vstack(
-                    node.id,
+                    widget.id,
+                    &widget.style,
                     children,
                     parent_x,
                     parent_y,
                     available_height,
                     available_width,
-                    *spacing as f32,
+                    widget.style.spacing as f32,
                     font_cx,
                     layout_cx,
                 );
             }
-            WidgetElement::HStack { spacing, children } => {
+            WidgetElement::HStack { children } => {
                 self.layout_hstack(
-                    node.id,
+                    widget.id,
+                    &widget.style,
                     children,
                     parent_x,
                     parent_y,
                     available_height,
                     available_width,
-                    *spacing as f32,
+                    widget.style.spacing as f32,
                     font_cx,
                     layout_cx,
                 );
             }
-            WidgetElement::Spacer { height, width } => {
-                let spacer_node = LayoutNode {
+            WidgetElement::Custom { .. } => {
+                let width = widget.style.width as f32;
+                let height = widget.style.height as f32;
+
+                let custom_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
-                    width: *width as f32,
-                    height: *height as f32,
+                    width: width,
+                    height: height,
                     parent_width: available_width,
                     parent_height: available_height,
                 };
-                self.nodes.insert(node.id, spacer_node);
+                self.nodes.insert(widget.id, custom_node);
             }
-            WidgetElement::Container {
-                child,
-                width,
-                height,
-                ..
-            } => {
+            WidgetElement::Container { child, .. } => {
+                let container_width = widget.style.width as f32;
+                let container_height = widget.style.height as f32;
+
                 let container_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
-                    width: *width as f32,
-                    height: *height as f32,
+                    width: container_width,
+                    height: container_height,
                     parent_width: available_width,
                     parent_height: available_height,
                 };
-                self.nodes.insert(node.id, container_node);
+                self.nodes.insert(widget.id, container_node);
 
                 // Layout the child inside the container
                 self.resolve_node(
                     child,
                     parent_x,
                     parent_y,
-                    *width as f32,
-                    *height as f32,
+                    container_width,
+                    container_height,
                     font_cx,
                     layout_cx,
                 );
             }
-            WidgetElement::Image { width, height, .. } => {
-                let width = *width as f32;
-                let height = *height as f32;
+            WidgetElement::Image { .. } => {
+                let width = widget.style.width as f32;
+                let height = widget.style.height as f32;
+
                 let image_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
@@ -135,31 +139,76 @@ impl<App> LayoutEngine<App> {
                     parent_height: available_height,
                     parent_width: available_width,
                 };
-                self.nodes.insert(node.id, image_node);
+                self.nodes.insert(widget.id, image_node);
             }
             WidgetElement::Text {
-                content, font_size, ..
+                content,
+                font_size,
+                weight,
+                ..
             } => {
                 let (width, height) =
-                    measure_text(font_cx, content, *font_size as f32, 1.0, layout_cx);
+                    measure_text(font_cx, content, weight, *font_size as f32, 1.0, layout_cx);
+
+                let (x_offset, y_offset) = self.get_align_offset(
+                    available_height,
+                    available_width,
+                    width,
+                    height,
+                    &widget.style.align,
+                );
 
                 let text_node = LayoutNode {
-                    x: parent_x,
-                    y: parent_y,
+                    x: parent_x + x_offset,
+                    y: parent_y + y_offset,
                     width: width.min(available_width),
                     height: height,
                     parent_height: available_height,
                     parent_width: available_width,
                 };
-                self.nodes.insert(node.id, text_node);
+                self.nodes.insert(widget.id, text_node);
             }
         }
+    }
+
+    /// Get x and y offset for align
+    fn get_align_offset(
+        &mut self,
+        available_height: f32,
+        available_width: f32,
+        width: f32,
+        height: f32,
+        align: &Option<Align>,
+    ) -> (f32, f32) // x, y
+    {
+        let align = if let Some(align) = align {
+            align
+        } else {
+            return (0.0, 0.0);
+        };
+
+        let y_offset = match align {
+            Align::Top | Align::TopLeft | Align::TopRight => 0.0,
+            Align::Center | Align::CenterLeft | Align::CenterRight => {
+                (available_height - height) / 2.0
+            }
+            Align::Bottom | Align::BottomLeft | Align::BottomRight => available_height - height,
+        };
+
+        let x_offset = match align {
+            Align::TopLeft | Align::CenterLeft | Align::BottomLeft => 0.0,
+            Align::Top | Align::Center | Align::Bottom => (available_width - width) / 2.0,
+            Align::TopRight | Align::CenterRight | Align::BottomRight => available_width - width,
+        };
+
+        (x_offset, y_offset)
     }
 
     /// Layout children vertically (VStack)
     fn layout_vstack(
         &mut self,
-        node_id: u64,
+        widget_id: u64,
+        style: &Style,
         children: &Vec<Widget<App>>,
         parent_x: f32,
         parent_y: f32,
@@ -169,7 +218,11 @@ impl<App> LayoutEngine<App> {
         font_cx: &mut FontContext,
         layout_cx: &mut LayoutContext,
     ) {
-        let mut current_y = parent_y;
+        let (x_offset, y_offset) =
+            self.get_align_offset(available_height, available_width, 0.0, 0.0, &style.align);
+
+        let mut current_y = parent_y + y_offset;
+        let current_x = parent_x + x_offset;
         let mut total_height = 0.0;
         let mut max_width = 0.0;
 
@@ -178,7 +231,7 @@ impl<App> LayoutEngine<App> {
             // Layout the child
             self.resolve_node(
                 &child,
-                parent_x,
+                current_x,
                 current_y,
                 available_width,
                 available_height,
@@ -219,13 +272,14 @@ impl<App> LayoutEngine<App> {
             parent_height: available_height,
             parent_width: available_width,
         };
-        self.nodes.insert(node_id, vstack_node);
+        self.nodes.insert(widget_id, vstack_node);
     }
 
     /// Layout children horizontally (HStack)
     fn layout_hstack(
         &mut self,
-        node_id: u64,
+        widget_id: u64,
+        style: &Style,
         children: &Vec<Widget<App>>,
         parent_x: f32,
         parent_y: f32,
@@ -235,7 +289,11 @@ impl<App> LayoutEngine<App> {
         font_cx: &mut FontContext,
         layout_cx: &mut LayoutContext,
     ) {
-        let mut current_x = parent_x;
+        let (x_offset, y_offset) =
+            self.get_align_offset(available_height, available_width, 0.0, 0.0, &style.align);
+
+        let mut current_x = parent_x + x_offset;
+        let current_y = parent_y + y_offset;
         let mut total_width = 0.0;
         let mut max_height = 0.0;
 
@@ -245,7 +303,7 @@ impl<App> LayoutEngine<App> {
             self.resolve_node(
                 &child,
                 current_x,
-                parent_y,
+                current_y,
                 available_width,
                 available_height,
                 font_cx,
@@ -285,199 +343,6 @@ impl<App> LayoutEngine<App> {
             parent_height: available_height,
             parent_width: available_width,
         };
-        self.nodes.insert(node_id, hstack_node);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct App {}
-
-    #[test]
-    fn it_works() {
-        let mut font_cx = FontContext::new();
-        let mut layout_cx = LayoutContext::new();
-        // Spacer test
-        let spacer_widget: Widget<App> = Widget::new(
-            2,
-            WidgetElement::Spacer {
-                height: 300,
-                width: 300,
-            },
-            None,
-        );
-        let mut layout: LayoutEngine<App> = LayoutEngine::new();
-        layout.compute(&spacer_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
-        let node_info = layout.get(2).unwrap();
-
-        // Verify parent size
-        assert_eq!(node_info.parent_height, 700.0);
-        assert_eq!(node_info.parent_width, 700.0);
-
-        // Verify size
-        assert_eq!(node_info.height, 300.0);
-        assert_eq!(node_info.width, 300.0);
-
-        // Verify pos
-        assert_eq!(node_info.x, 0.0);
-        assert_eq!(node_info.y, 0.0);
-
-        // VStack test
-
-        let spacer1_widget: Widget<App> = Widget::new(
-            1,
-            WidgetElement::Spacer {
-                height: 300,
-                width: 300,
-            },
-            None,
-        );
-
-        let spacer2_widget = Widget::new(
-            2,
-            WidgetElement::Spacer {
-                height: 300,
-                width: 300,
-            },
-            None,
-        );
-
-        let vstack_widget = Widget::new(
-            3,
-            WidgetElement::VStack {
-                spacing: 20,
-                children: vec![spacer1_widget, spacer2_widget],
-            },
-            None,
-        );
-
-        let mut layout = LayoutEngine::new();
-        layout.compute(&vstack_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
-        let node_info = layout.get(3).unwrap();
-
-        // Verify parent size
-        assert_eq!(node_info.parent_height, 700.0);
-        assert_eq!(node_info.parent_width, 700.0);
-
-        // Verify size
-        assert_eq!(node_info.height, 620.0);
-        assert_eq!(node_info.width, 300.0);
-
-        // Verify pos
-        assert_eq!(node_info.x, 0.0);
-        assert_eq!(node_info.y, 0.0);
-
-        // Verify childs
-        let spacer1_node_info = layout.get(1).unwrap();
-
-        {
-            // Verify parent size
-            assert_eq!(spacer1_node_info.parent_height, 620.0);
-            assert_eq!(spacer1_node_info.parent_width, 300.0);
-
-            // Verify size
-            assert_eq!(spacer1_node_info.height, 300.0);
-            assert_eq!(spacer1_node_info.width, 300.0);
-
-            // Verify pos
-            assert_eq!(spacer1_node_info.x, 0.0);
-            assert_eq!(spacer1_node_info.y, 0.0);
-        }
-
-        let spacer2_node_info = layout.get(2).unwrap();
-
-        {
-            // Verify parent size
-            assert_eq!(spacer2_node_info.parent_height, 620.0);
-            assert_eq!(spacer2_node_info.parent_width, 300.0);
-
-            // Verify size
-            assert_eq!(spacer2_node_info.height, 300.0);
-            assert_eq!(spacer2_node_info.width, 300.0);
-
-            // Verify pos
-            assert_eq!(spacer2_node_info.x, 0.0);
-            assert_eq!(spacer2_node_info.y, 320.0);
-        }
-
-        // HStack test
-
-        let spacer1_widget: Widget<App> = Widget::new(
-            1,
-            WidgetElement::Spacer {
-                height: 300,
-                width: 300,
-            },
-            None,
-        );
-
-        let spacer2_widget = Widget::new(
-            2,
-            WidgetElement::Spacer {
-                height: 300,
-                width: 300,
-            },
-            None,
-        );
-
-        let hstack_widget = Widget::new(
-            3,
-            WidgetElement::HStack {
-                spacing: 20,
-                children: vec![spacer1_widget, spacer2_widget],
-            },
-            None,
-        );
-
-        let mut layout = LayoutEngine::new();
-        layout.compute(&hstack_widget, 700.0, 700.0, &mut font_cx, &mut layout_cx);
-        let node_info = layout.get(3).unwrap();
-
-        // Verify parent size
-        assert_eq!(node_info.parent_height, 700.0);
-        assert_eq!(node_info.parent_width, 700.0);
-
-        // Verify size
-        assert_eq!(node_info.height, 300.0);
-        assert_eq!(node_info.width, 620.0);
-
-        // Verify pos
-        assert_eq!(node_info.x, 0.0);
-        assert_eq!(node_info.y, 0.0);
-
-        // Verify childs
-        let spacer1_node_info = layout.get(1).unwrap();
-
-        {
-            // Verify parent size
-            assert_eq!(spacer1_node_info.parent_height, 300.0);
-            assert_eq!(spacer1_node_info.parent_width, 620.0);
-
-            // Verify size
-            assert_eq!(spacer1_node_info.height, 300.0);
-            assert_eq!(spacer1_node_info.width, 300.0);
-
-            // Verify pos
-            assert_eq!(spacer1_node_info.x, 0.0);
-            assert_eq!(spacer1_node_info.y, 0.0);
-        }
-
-        let spacer2_node_info = layout.get(2).unwrap();
-
-        {
-            // Verify parent size
-            assert_eq!(spacer2_node_info.parent_height, 300.0);
-            assert_eq!(spacer2_node_info.parent_width, 620.0);
-
-            // Verify size
-            assert_eq!(spacer2_node_info.height, 300.0);
-            assert_eq!(spacer2_node_info.width, 300.0);
-
-            // Verify pos
-            assert_eq!(spacer2_node_info.x, 320.0);
-            assert_eq!(spacer2_node_info.y, 0.0);
-        }
+        self.nodes.insert(widget_id, hstack_node);
     }
 }

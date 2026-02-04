@@ -147,7 +147,7 @@ impl<App> ApplicationHandler for Program<App> {
                                 base_color: AlphaColor::from_rgba8(r, g, b, a),
                                 width,
                                 height,
-                                antialiasing_method: AaConfig::Msaa8,
+                                antialiasing_method: AaConfig::Area,
                             },
                         )
                         .expect("failed to render to surface");
@@ -272,7 +272,7 @@ fn check_clicked(layout: &LayoutNode, click: PhysicalPosition<f64>) -> bool {
     false
 }
 
-/// Helper function that creates a vello `Renderer` for a given `RenderContext` and `RenderSurface`
+// Helper function that creates a vello `Renderer` for a given `RenderContext` and `RenderSurface`
 fn create_vello_renderer(render_cx: &RenderContext, surface: &RenderSurface<'_>) -> VelloRenderer {
     VelloRenderer::new(
         &render_cx.devices[surface.dev_id].device,

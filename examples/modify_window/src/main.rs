@@ -1,6 +1,6 @@
 use glazeui::{
     application::start,
-    core::{Widget, button, color::Color, vstack},
+    core::{Color, Widget, button, vstack},
 };
 
 fn main() -> glazeui::Result {
