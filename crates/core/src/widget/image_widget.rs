@@ -65,7 +65,7 @@ impl<App> ImageWidget<App> {
         })
     }
 
-    pub fn from_file(
+    pub fn from_path(
         mut self,
         path: impl AsRef<Path>,
         width: Option<u32>,
