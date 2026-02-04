@@ -4,7 +4,7 @@ use std::path::Path;
 
 use glazeui::{
     application::start,
-    core::{image, text, vstack, Widget},
+    core::{Widget, image, text, vstack},
 };
 
 fn main() -> glazeui::Result {

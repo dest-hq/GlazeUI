@@ -170,31 +170,113 @@ impl<App: 'static> Run<App> {
         });
         context.instance = instance;
 
-        let mut window = Program::<App> {
-            window: None,
-            window_attributes: self.window_settings.attributes,
-            renderer: Renderer {
-                context,
-                scene: Scene::new(),
-                surface: None,
-                renderers: vec![],
-                backend: Some(self.backend),
-                font_context: Some(FontContext::new()),
-                layout_context: Some(LayoutContext::new()),
-                layout: None,
-                vsync: self.window_settings.vsync,
-            },
-            application: Application {
-                user_struct: self.user_struct,
-                view_fn: Some(self.view_fn),
-                background: self.window_settings.background,
-                position: PhysicalPosition::new(0.0, 0.0),
-            },
-        };
+        #[cfg(target_arch = "wasm32")]
+        {
+            use std::sync::Arc;
+            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+            console_log::init().expect("could not initialize logger");
+            use winit::platform::web::WindowExtWebSys;
 
-        match event_loop.run_app(&mut window) {
-            Ok(()) => return Ok(()),
-            Err(e) => return Err(e),
+            #[allow(deprecated)]
+            let window = Arc::new(
+                event_loop
+                    .create_window(WindowAttributes::default())
+                    .unwrap(),
+            );
+
+            // append canvas
+            let canvas = window.canvas().unwrap();
+            web_sys::window()
+                .and_then(|win| win.document())
+                .and_then(|doc| doc.body())
+                .and_then(|body| body.append_child(canvas.as_ref()).ok())
+                .expect("couldn't append canvas to document body");
+            drop(web_sys::HtmlElement::from(canvas).focus());
+
+            wasm_bindgen_futures::spawn_local(async move {
+                let (width, height, scale_factor) = web_sys::window()
+                    .map(|w| {
+                        (
+                            w.inner_width().unwrap().as_f64().unwrap(),
+                            w.inner_height().unwrap().as_f64().unwrap(),
+                            w.device_pixel_ratio(),
+                        )
+                    })
+                    .unwrap();
+
+                let size =
+                    winit::dpi::PhysicalSize::from_logical::<_, f64>((width, height), scale_factor);
+                _ = window.request_inner_size(size);
+
+                let mode = if self.window_settings.vsync {
+                    wgpu::PresentMode::AutoVsync
+                } else {
+                    wgpu::PresentMode::AutoNoVsync
+                };
+
+                let surface = context
+                    .create_surface(window.clone(), size.width, size.height, mode)
+                    .await;
+
+                if let Ok(surface) = surface {
+                    let mut program = Program::<App> {
+                        window: Some(window),
+                        window_attributes: WindowAttributes::default(),
+                        renderer: Renderer {
+                            context,
+                            scene: Scene::new(),
+                            surface: Some(surface),
+                            renderers: vec![],
+                            backend: Some(self.backend),
+                            font_context: Some(FontContext::new()),
+                            layout_context: Some(LayoutContext::new()),
+                            layout: None,
+                            vsync: self.window_settings.vsync,
+                        },
+                        application: Application {
+                            user_struct: self.user_struct,
+                            view_fn: Some(self.view_fn),
+                            background: self.window_settings.background,
+                            position: PhysicalPosition::new(0.0, 0.0),
+                        },
+                    };
+
+                    if let Err(e) = event_loop.run_app(&mut program) {
+                        web_sys::console::error_1(&format!("run_app failed: {:?}", e).into());
+                    }
+                }
+            });
+            return Ok(());
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let mut program = Program::<App> {
+                window: None,
+                window_attributes: self.window_settings.attributes,
+                renderer: Renderer {
+                    context,
+                    scene: Scene::new(),
+                    surface: None,
+                    renderers: vec![],
+                    backend: Some(self.backend),
+                    font_context: Some(FontContext::new()),
+                    layout_context: Some(LayoutContext::new()),
+                    layout: None,
+                    vsync: self.window_settings.vsync,
+                },
+                application: Application {
+                    user_struct: self.user_struct,
+                    view_fn: Some(self.view_fn),
+                    background: self.window_settings.background,
+                    position: PhysicalPosition::new(0.0, 0.0),
+                },
+            };
+
+            match event_loop.run_app(&mut program) {
+                Ok(()) => return Ok(()),
+                Err(e) => return Err(e),
+            }
         }
     }
 }

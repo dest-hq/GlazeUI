@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use glazeui_core::{WidgetElement, id::clear_counter, window::control::Window};
 use glazeui_layout::{LayoutEngine, LayoutNode};
 use glazeui_vello::draw;
@@ -20,7 +18,13 @@ use winit::{
 use crate::Program;
 
 impl<App> ApplicationHandler for Program<App> {
+    #[cfg(target_arch = "wasm32")]
+    fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
+
+    #[cfg(not(target_arch = "wasm32"))]
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        use std::sync::Arc;
+
         if self.window.is_none() {
             // Get window settings
             let win_attr = self.window_attributes.clone();
@@ -68,16 +72,33 @@ impl<App> ApplicationHandler for Program<App> {
                     (self.window.as_ref(), self.renderer.surface.as_mut())
                 {
                     if new_size.width != 0 && new_size.height != 0 {
+                        let scale = window.scale_factor();
                         self.renderer.context.resize_surface(
                             surface,
-                            new_size.width,
-                            new_size.height,
+                            new_size.width / scale as u32,
+                            new_size.height / scale as u32,
                         );
                     }
                     window.request_redraw();
                 }
             }
             WindowEvent::RedrawRequested => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    if let Some(surface) = self.renderer.surface.as_ref() {
+                        let dev_id = surface.dev_id;
+
+                        if self.renderer.renderers.len() <= dev_id {
+                            self.renderer.renderers.resize_with(dev_id + 1, || None);
+                        }
+
+                        if self.renderer.renderers[dev_id].is_none() {
+                            self.renderer.renderers[dev_id] =
+                                Some(create_vello_renderer(&self.renderer.context, surface));
+                        }
+                    }
+                }
+
                 if let (Some(window), Some(view), Some(surface), Some(font_cx), Some(layout_cx)) = (
                     self.window.as_ref(),
                     self.application.view_fn.as_ref(),
@@ -97,11 +118,13 @@ impl<App> ApplicationHandler for Program<App> {
                     let mut layout = LayoutEngine::new();
                     let ui = view(&mut self.application.user_struct);
 
+                    let scale = window.scale_factor();
+
                     // Compute layout
                     layout.compute(
                         &ui,
-                        size.width as f32,
-                        size.height as f32,
+                        size.width as f32 / scale as f32,
+                        size.height as f32 / scale as f32,
                         font_cx,
                         layout_cx,
                     );
@@ -115,7 +138,7 @@ impl<App> ApplicationHandler for Program<App> {
                             font_context,
                             layout_context,
                             &mut layout,
-                            1.0,
+                            scale as f32,
                             &ui,
                         );
                     }
