@@ -145,10 +145,19 @@ impl<App> LayoutEngine<App> {
                 content,
                 font_size,
                 weight,
+                style,
                 ..
             } => {
-                let (width, height) =
-                    measure_text(font_cx, content, weight, *font_size as f32, 1.0, layout_cx);
+                let (width, height) = measure_text(
+                    font_cx,
+                    content,
+                    weight,
+                    style,
+                    widget.style.spacing,
+                    *font_size as f32,
+                    1.0,
+                    layout_cx,
+                );
 
                 let (x_offset, y_offset) = self.get_align_offset(
                     available_height,

@@ -1,11 +1,15 @@
 use std::marker::PhantomData;
 
-use crate::{Margin, Widget, color::Color, id::next_id, style::Style, weight::TextWeight};
+use crate::{
+    Margin, TextStyle, Widget, color::Color, id::next_id, style::Style, weight::TextWeight,
+};
 
 pub struct Text<App> {
     pub content: String,
     pub font_size: u32,
     pub weight: TextWeight,
+    pub style: TextStyle,
+    pub spacing: i32,
     pub color: Color,
     pub margin: Margin,
     _marker: PhantomData<App>,
@@ -17,6 +21,8 @@ impl<App> Text<App> {
             content: content,
             font_size: 14,
             weight: TextWeight::NORMAL,
+            style: TextStyle::Normal,
+            spacing: 0,
             color: Color::rgb(255, 255, 255),
             margin: Margin::new(),
             _marker: PhantomData,
@@ -25,6 +31,17 @@ impl<App> Text<App> {
 
     pub fn size(mut self, font_size: u32) -> Self {
         self.font_size = font_size;
+        self
+    }
+
+    pub fn style(mut self, style: TextStyle) -> Self {
+        self.style = style;
+        self
+    }
+
+    /// Extra spacing between letters
+    pub fn spacing(mut self, spacing: i32) -> Self {
+        self.spacing = spacing;
         self
     }
 
@@ -49,6 +66,7 @@ impl<App> Text<App> {
         // Text style
         let text_style = Style {
             margin: self.margin,
+            spacing: self.spacing,
             ..Default::default()
         };
 
@@ -58,6 +76,7 @@ impl<App> Text<App> {
                 content: self.content,
                 font_size: self.font_size,
                 weight: self.weight,
+                style: self.style,
                 color: (r, g, b, a),
             },
             on_press: None,

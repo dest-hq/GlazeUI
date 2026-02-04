@@ -1,7 +1,7 @@
 use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
 use crate::{
-    Margin, Padding, Widget, align::Align, color::Color, id::next_id, style::Style,
+    Margin, Padding, TextStyle, Widget, align::Align, color::Color, id::next_id, style::Style,
     weight::TextWeight, window::control::Window,
 };
 
@@ -10,6 +10,8 @@ pub struct Button<App: 'static> {
     pub label_size: u32,
     pub label_weight: TextWeight,
     pub label_color: Color,
+    pub label_style: TextStyle,
+    pub label_spacing: i32,
     pub width: u32,
     pub height: u32,
     pub color: Color,
@@ -26,6 +28,8 @@ impl<App> Button<App> {
             label_size: 14,
             label_weight: TextWeight::NORMAL,
             label_color: Color::rgb(255, 255, 255),
+            label_style: TextStyle::Normal,
+            label_spacing: 0,
             width: 100,
             height: 50,
             color: Color::rgb(50, 50, 51),
@@ -52,6 +56,11 @@ impl<App> Button<App> {
         self
     }
 
+    pub fn label_style(mut self, style: TextStyle) -> Self {
+        self.label_style = style;
+        self
+    }
+
     pub fn label_size(mut self, font_size: u32) -> Self {
         self.label_size = font_size;
         self
@@ -59,6 +68,12 @@ impl<App> Button<App> {
 
     pub fn label_weight(mut self, weight: TextWeight) -> Self {
         self.label_weight = weight;
+        self
+    }
+
+    /// Extra spacing between letters
+    pub fn label_spacing(mut self, spacing: i32) -> Self {
+        self.label_spacing = spacing;
         self
     }
 
@@ -99,6 +114,7 @@ impl<App> Button<App> {
         // Text style
         let text_style = Style {
             align: Some(Align::Center),
+            spacing: self.label_spacing,
             ..Default::default()
         };
 
@@ -109,6 +125,7 @@ impl<App> Button<App> {
                 content: self.label,
                 font_size: self.label_size,
                 weight: self.label_weight,
+                style: self.label_style,
                 color: (r2, g2, b2, a2),
             },
             on_press: None,

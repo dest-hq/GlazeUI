@@ -25,6 +25,7 @@ pub fn draw<App>(
         font_size,
         weight,
         color,
+        style,
     } = &widget.element
     {
         let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
@@ -37,6 +38,8 @@ pub fn draw<App>(
             content,
             color,
             weight,
+            style,
+            widget.style.spacing,
             *font_size as f32,
             scale,
             layout_context,

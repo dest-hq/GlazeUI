@@ -12,4 +12,4 @@ cargo run --release --package clicker
 
 ## Screenshot
 
-<img width="500" height="500" alt="Clicker" src="https://github.com/user-attachments/assets/7cf293d1-ffbc-498e-928e-f5a9b00ad44a" />
+<img width="500" height="500" alt="Clicker" src="https://github.com/user-attachments/assets/288521a8-a78f-40f7-887e-59d460da68c8" />

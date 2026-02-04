@@ -24,36 +24,37 @@ Inspired by [Iced](https://github.com/iced-rs/iced) and [Egui](https://github.co
 ## Quickstart
 
 ```rust
+use std::path::Path;
+
 use glazeui::{
     application::start,
-    core::{Widget, button, text, vstack},
+    core::{Widget, image, text, vstack},
 };
 
 fn main() -> glazeui::Result {
-    let init = Clicker { count: 0 };
-    start(init, Clicker::view).title("Clicker").run()
+    let init = Image {};
+
+    start(init, Image::view).title("Ferris Image").run()
 }
 
-struct Clicker {
-    count: i32,
-}
+struct Image {}
 
-impl Clicker {
-    fn view(&mut self) -> Widget<Clicker> {
-        let add = button("+")
-            .label_size(24)
-            .on_click(|app: &mut Clicker, _| app.count += 1)
+impl Image {
+    fn view(&mut self) -> Widget<Image> {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("assets")
+            .join("ferris.png");
+        let ferris_text = text("Ferris").size(35).build();
+        let image = image()
+            .from_file(path, Some(300), Some(200)) // If one of size's (width, height) is set to None it will be set auto to image native size
+            .unwrap()
             .build();
-        let count = text(&self.count.to_string()).size(24).build();
-        let minus = button("-")
-            .label_size(24)
-            .on_click(|app: &mut Clicker, _| app.count -= 1)
-            .build();
-        vstack!(add, count, minus).build()
+        vstack!(ferris_text, image).spacing(20).build()
     }
 }
 ```
-<img width="500" height="500" alt="Clicker" src="https://github.com/user-attachments/assets/7cf293d1-ffbc-498e-928e-f5a9b00ad44a" />
+<img width="500" height="500" alt="Ferris" src="https://github.com/user-attachments/assets/226a6194-d575-42e5-bb26-faa822d89d26" />
 
 ## License
 This library is dual licensed with both the MIT license ([LICENSE-MIT](LICENSE-MIT)) and the Apache-2.0 license ([LICENSE-APACHE](LICENSE-APACHE)) meaning that you can use either the MIT license or the Apache-2.0 license, depending on your needs

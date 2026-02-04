@@ -1,4 +1,4 @@
-use glazeui_core::{WidgetElement, id::clear_counter, window::control::Window};
+use glazeui_core::{Widget, WidgetElement, id::clear_counter, window::control::Window};
 use glazeui_layout::{LayoutEngine, LayoutNode};
 use glazeui_vello::draw;
 use vello::{
@@ -220,59 +220,18 @@ impl<App> ApplicationHandler for Program<App> {
 
                         // Create copy of window and give that to user, with that he can edit the window settings
                         let mut user_window = Window {
-                            window: self.window.as_ref().unwrap().clone(),
+                            window: window.clone(),
                             background: &mut self.application.background,
                             eventloop: event_loop,
                         };
 
-                        // Get root widget info
-                        let layout_resolved = layout.get(ui.id).unwrap();
-
-                        // Check if was a click inside the root widget
-                        let clicked = check_clicked(layout_resolved, self.application.position);
-
-                        if clicked {
-                            // If root widget is VStack or HStack
-                            if let WidgetElement::VStack { children, .. }
-                            | WidgetElement::HStack { children, .. } = &ui.element
-                            {
-                                // Go to every child in vstack/hstack childrens
-                                for child in children {
-                                    // Get widget information (position, width and height)
-                                    let layout_resolved = layout.get(child.id).unwrap();
-                                    // Check if was a click inside the widget
-                                    let clicked =
-                                        check_clicked(layout_resolved, self.application.position);
-
-                                    if clicked {
-                                        // If click was inside the widget and user provided a fn in on_press
-                                        if let Some(callback) = &child.on_press {
-                                            let mut cb = callback.borrow_mut();
-                                            // Call on_press fn
-                                            cb(&mut self.application.user_struct, &mut user_window);
-                                            // Redraw the window
-                                            window.request_redraw();
-                                        }
-                                    }
-                                }
-                            } else if let WidgetElement::Container { child, .. } = &ui.element {
-                                // Get widget information (position, width and height)
-                                let layout_resolved = layout.get(ui.id).unwrap();
-                                // Check if was a click inside the widget
-                                let clicked =
-                                    check_clicked(layout_resolved, self.application.position);
-                                if clicked {
-                                    // If click was inside the widget and user provided a fn in on_press
-                                    if let Some(callback) = &child.on_press {
-                                        let mut cb = callback.borrow_mut();
-                                        // Call on_press fn
-                                        cb(&mut self.application.user_struct, &mut user_window);
-                                        // Redraw the window
-                                        window.request_redraw();
-                                    }
-                                }
-                            }
-                        }
+                        check_click(
+                            &mut user_window,
+                            &ui,
+                            layout,
+                            &self.application.position,
+                            &mut self.application.user_struct,
+                        );
                     }
                 }
             }
@@ -284,7 +243,50 @@ impl<App> ApplicationHandler for Program<App> {
     }
 }
 
-fn check_clicked(layout: &LayoutNode, click: PhysicalPosition<f64>) -> bool {
+fn check_click<App>(
+    window: &mut Window,
+    ui: &Widget<App>,
+    layout: &LayoutEngine<App>,
+    pos: &PhysicalPosition<f64>,
+    user_struct: &mut App,
+) {
+    // Get root widget info
+    let layout_resolved = layout.get(ui.id).unwrap();
+
+    // Check if was a click inside the root widget
+    let clicked = check_click_inside(layout_resolved, *pos);
+
+    if clicked {
+        // If root widget is VStack or HStack
+        if let WidgetElement::VStack { children, .. } | WidgetElement::HStack { children, .. } =
+            &ui.element
+        {
+            // Go to every child in vstack/hstack childrens
+            for child in children {
+                check_click(window, child, layout, pos, user_struct);
+            }
+        } else if let WidgetElement::Container { child, .. } = &ui.element {
+            // Get widget information (position, width and height)
+            let layout_resolved = layout.get(ui.id).unwrap();
+            // Check if was a click inside the widget
+            let clicked = check_click_inside(layout_resolved, *pos);
+            if clicked {
+                // If click was inside the widget and user provided a fn in on_press
+                if let Some(callback) = &ui.on_press {
+                    let mut cb = callback.borrow_mut();
+                    // Call on_press fn
+                    cb(user_struct, window);
+                    // Redraw the window
+                    window.request_redraw();
+                } else {
+                    check_click(window, child, layout, pos, user_struct);
+                }
+            }
+        }
+    }
+}
+
+fn check_click_inside(layout: &LayoutNode, click: PhysicalPosition<f64>) -> bool {
     if click.x >= layout.x as f64
         && click.x <= layout.x as f64 + layout.width as f64
         && click.y >= layout.y as f64

@@ -1,5 +1,3 @@
-// Right now, this example doesn't work, because i didnt implement image in wgpu yet
-
 use std::path::Path;
 
 use glazeui::{

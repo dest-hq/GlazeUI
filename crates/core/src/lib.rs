@@ -13,6 +13,7 @@ pub mod id;
 mod margin;
 mod padding;
 pub mod style;
+mod text_style;
 mod weight;
 pub mod widget;
 pub mod window;
@@ -23,6 +24,7 @@ pub use color::*;
 pub use helpers::*;
 pub use margin::*;
 pub use padding::*;
+pub use text_style::*;
 use vello::peniko::ImageBrush;
 pub use weight::*;
 
@@ -79,6 +81,7 @@ pub enum WidgetElement<App: 'static> {
         content: String,
         font_size: u32,
         weight: TextWeight,
+        style: TextStyle,
         color: (u8, u8, u8, u8),
     },
 
@@ -118,12 +121,14 @@ impl<App> fmt::Debug for WidgetElement<App> {
                 content,
                 font_size,
                 weight,
+                style,
                 color,
             } => f
                 .debug_struct("Text")
                 .field("content", content)
                 .field("font_size", font_size)
                 .field("weight", weight)
+                .field("style", style)
                 .field("color", color)
                 .finish(),
             WidgetElement::Image { image } => {
@@ -152,11 +157,13 @@ impl<App> Clone for WidgetElement<App> {
                 content,
                 font_size,
                 weight,
+                style,
                 color,
             } => WidgetElement::Text {
                 content: content.clone(),
                 font_size: *font_size,
                 weight: weight.clone(),
+                style: style.clone(),
                 color: *color,
             },
             WidgetElement::Container {
