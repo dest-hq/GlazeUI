@@ -99,11 +99,11 @@ pub enum WidgetElement<App: 'static> {
         children: Vec<Widget<App>>,
     },
 
-    /// Custom element
-    Custom {},
+    /// Empty space
+    Spacer {},
 }
 
-// Debug для WidgetElement
+// Debug for WidgetElement
 impl<App> fmt::Debug for WidgetElement<App> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -142,7 +142,7 @@ impl<App> fmt::Debug for WidgetElement<App> {
                 .debug_struct("HStack")
                 .field("children", children)
                 .finish(),
-            WidgetElement::Custom {} => f.debug_struct("Custom").finish(),
+            WidgetElement::Spacer {} => f.debug_struct("Spacer").finish(),
         }
     }
 }
@@ -181,7 +181,7 @@ impl<App> Clone for WidgetElement<App> {
             WidgetElement::HStack { children } => WidgetElement::HStack {
                 children: children.iter().map(|c| c.clone()).collect(),
             },
-            WidgetElement::Custom {} => WidgetElement::Custom {},
+            WidgetElement::Spacer {} => WidgetElement::Spacer {},
         }
     }
 }

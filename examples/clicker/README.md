@@ -7,7 +7,7 @@ This is a basic example which has a number and 2 buttons to either increment or 
 ```bash
 git clone https://github.com/dest-hq/GlazeUI.git
 cd GlazeUI
-cargo run --release --package clicker
+cargo run --release -p clicker
 ```
 
 ## Screenshot

@@ -7,7 +7,7 @@ This is a basic example that just shows "Hello World!" in the top left corner of
 ```bash
 git clone https://github.com/dest-hq/GlazeUI.git
 cd GlazeUI
-cargo run --release --package hello_world
+cargo run --release -p hello_world
 ```
 
 ## Screenshot

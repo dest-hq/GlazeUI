@@ -22,6 +22,11 @@ impl<App> Spacer<App> {
         self
     }
 
+    pub fn height(mut self, height: u32) -> Self {
+        self.height = height;
+        self
+    }
+
     pub fn build(self) -> Widget<App> {
         // Spacer style
         let spacer_style = Style {
@@ -32,7 +37,7 @@ impl<App> Spacer<App> {
 
         Widget {
             id: next_id(),
-            element: crate::WidgetElement::Custom {},
+            element: crate::WidgetElement::Spacer {},
             on_press: None,
             style: spacer_style,
             _marker: PhantomData,

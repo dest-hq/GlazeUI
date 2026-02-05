@@ -67,10 +67,15 @@ pub fn draw_text(
 
     // Set default font family
     builder.push_default(GenericFamily::SystemUi);
+    // Set font weight
     builder.push_default(StyleProperty::FontWeight(FontWeight::new(weight)));
+    // Set font style (Italic, Normal)
     builder.push_default(StyleProperty::FontStyle(style));
+    // Set line height (font size * 1.3)
     builder.push_default(LineHeight::FontSizeRelative(1.3));
+    // Set font size
     builder.push_default(StyleProperty::FontSize(font_size));
+
     builder.push_default(StyleProperty::Strikethrough(striketrough));
     builder.push_default(StyleProperty::Underline(underline));
     builder.push_default(StyleProperty::LetterSpacing(text_spacing as f32));

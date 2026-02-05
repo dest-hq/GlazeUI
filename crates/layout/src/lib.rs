@@ -88,11 +88,11 @@ impl<App> LayoutEngine<App> {
                     layout_cx,
                 );
             }
-            WidgetElement::Custom { .. } => {
+            WidgetElement::Spacer { .. } => {
                 let width = widget.style.width as f32;
                 let height = widget.style.height as f32;
 
-                let custom_node = LayoutNode {
+                let spacer_node = LayoutNode {
                     x: parent_x,
                     y: parent_y,
                     width: width,
@@ -100,7 +100,7 @@ impl<App> LayoutEngine<App> {
                     parent_width: available_width,
                     parent_height: available_height,
                 };
-                self.nodes.insert(widget.id, custom_node);
+                self.nodes.insert(widget.id, spacer_node);
             }
             WidgetElement::Container { child, .. } => {
                 let container_width = widget.style.width as f32;

@@ -7,7 +7,7 @@ This is a basic example that just shows the text "Ferris" and ferris image
 ```bash
 git clone https://github.com/dest-hq/GlazeUI.git
 cd GlazeUI
-cargo run --release --package ferris_image
+cargo run --release -p ferris_image
 ```
 
 ## Screenshot
