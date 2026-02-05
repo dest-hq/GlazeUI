@@ -1,8 +1,6 @@
 use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
-use crate::{
-    Margin, Padding, Widget, color::Color, id::next_id, style::Style, window::control::Window,
-};
+use crate::{Margin, Padding, Widget, color::Color, id::next_id, style::Style, window::Window};
 
 pub struct Container<App: 'static> {
     pub child: Widget<App>,
@@ -39,8 +37,12 @@ impl<App> Container<App> {
         self
     }
 
-    pub fn size(mut self, width: u32, height: u32) -> Self {
+    pub fn width(mut self, width: u32) -> Self {
         self.width = width;
+        self
+    }
+
+    pub fn height(mut self, height: u32) -> Self {
         self.height = height;
         self
     }

@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::core::{
     Backend, Color, Widget,
-    window::{level::WindowLevel, theme::Theme},
+    window::{Theme, WindowLevel},
 };
 use crate::shell::{Application, Program, Renderer};
 use parley::{FontContext, LayoutContext};

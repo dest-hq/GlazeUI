@@ -2,7 +2,7 @@ use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
 use crate::{
     Margin, Padding, TextStyle, Widget, align::Align, color::Color, id::next_id, style::Style,
-    weight::TextWeight, window::control::Window,
+    weight::TextWeight, window::Window,
 };
 
 pub struct Button<App: 'static> {
@@ -50,8 +50,12 @@ impl<App> Button<App> {
         self
     }
 
-    pub fn size(mut self, width: u32, height: u32) -> Self {
+    pub fn width(mut self, width: u32) -> Self {
         self.width = width;
+        self
+    }
+
+    pub fn height(mut self, height: u32) -> Self {
         self.height = height;
         self
     }

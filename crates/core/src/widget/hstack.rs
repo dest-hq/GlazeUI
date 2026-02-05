@@ -18,14 +18,12 @@ impl<App> HStack<App> {
         }
     }
 
-    pub fn extend(mut self, children: Vec<Widget<App>>) -> Self {
+    pub fn extend(&mut self, children: Vec<Widget<App>>) {
         self.children = children;
-        self
     }
 
-    pub fn child(mut self, child: Widget<App>) -> Self {
+    pub fn push(&mut self, child: Widget<App>) {
         self.children.push(child);
-        self
     }
 
     pub fn margin(mut self, margin: Margin) -> Self {

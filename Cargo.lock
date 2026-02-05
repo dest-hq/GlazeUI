@@ -121,6 +121,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "array_counter"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -369,13 +376,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "clicker"
-version = "0.1.1"
-dependencies = [
- "glazeui",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -514,6 +514,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77745e017f5edba1a9c1d854f6f3a52dac8a12dd5af5d2f54aecf61e43d80d30"
 dependencies = [
  "libm",
+]
+
+[[package]]
+name = "counter"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
 ]
 
 [[package]]

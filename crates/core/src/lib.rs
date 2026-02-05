@@ -3,8 +3,9 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use crate::id::next_id;
 use crate::style::Style;
-use crate::window::control::Window;
+use crate::window::Window;
 mod align;
 mod backend;
 mod color;
@@ -59,7 +60,7 @@ impl<App> fmt::Debug for Widget<App> {
 impl<App> Clone for Widget<App> {
     fn clone(&self) -> Self {
         Self {
-            id: self.id,
+            id: next_id(),
             element: self.element.clone(),
             on_press: self.on_press.clone(),
             style: self.style.clone(),
