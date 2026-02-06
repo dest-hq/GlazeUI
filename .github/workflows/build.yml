@@ -10,8 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  run-linux:
-    name: Run Linux
+  build-linux:
+    name: Build Linux
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +20,15 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Run counter
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libfontconfig1-dev
+      - name: Build counter
         run: cargo build -p counter --verbose
       # - name: Run tests
       #   run: cargo test -p counter --verbose
 
-  run-macos:
-    name: Run MacOS
+  build-macos:
+    name: Build MacOS
     runs-on: macOS-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,13 +37,13 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Run counter
+      - name: Build counter
         run: cargo build -p counter --verbose
       # - name: Run tests
       #   run: cargo test -p counter --verbose
 
-  run-windows:
-    name: Run Windows
+  build-windows:
+    name: Build Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,17 +52,21 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Run counter
+      - name: Build counter
         run: cargo build -p counter --verbose
       # - name: Run tests
       #   run: cargo test -p counter --verbose
-  build_raspberry:
+  build-raspberry:
+    name: Build Raspberry
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       - name: Install cross
         run: cargo install cross
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libfontconfig1-dev
 
       - name: Build counter for Raspberry Pi 3/4 (64-bit)
         run: cross build --verbose --profile release --package counter --target aarch64-unknown-linux-gnu
