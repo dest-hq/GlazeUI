@@ -2,19 +2,25 @@ use std::path::Path;
 
 use glazeui::{
     application::start,
-    core::{Widget, image, text, vstack},
+    core::{Widget, image, text, vstack, window::Window},
 };
 
 fn main() -> glazeui::Result {
     let init = Image {};
 
-    start(init, Image::view).title("Ferris Image").run()
+    start(init, Image::view, Image::update)
+        .title("Ferris Image")
+        .run()
 }
 
 struct Image {}
 
+#[derive(Clone)]
+enum Message {}
+
 impl Image {
-    fn view(&mut self) -> Widget<Image> {
+    fn update(&mut self, _: Message, _: &mut Window) {}
+    fn view(&mut self) -> Widget<Message, Image> {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("src")
             .join("assets")

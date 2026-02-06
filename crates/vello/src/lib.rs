@@ -9,13 +9,13 @@ use crate::widgets::{
 
 pub mod widgets;
 
-pub fn draw<App>(
+pub fn draw<M: Clone, App>(
     scene: &mut Scene,
     font_context: &mut FontContext,
     layout_context: &mut LayoutContext,
-    layout_engine: &mut LayoutEngine<App>,
+    layout_engine: &mut LayoutEngine<M, App>,
     scale: f32,
-    widget: &Widget<App>,
+    widget: &Widget<M, App>,
 ) {
     let widget_layout = layout_engine.get(widget.id).unwrap();
 

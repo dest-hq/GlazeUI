@@ -1,11 +1,11 @@
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::marker::PhantomData;
 
 use crate::{
     Margin, Padding, TextStyle, Widget, align::Align, color::Color, id::next_id, style::Style,
-    weight::TextWeight, window::Window,
+    weight::TextWeight,
 };
 
-pub struct Button<App: 'static> {
+pub struct Button<M: Clone, App: 'static> {
     pub label: String,
     pub label_size: u32,
     pub label_weight: TextWeight,
@@ -16,12 +16,13 @@ pub struct Button<App: 'static> {
     pub height: u32,
     pub color: Color,
     pub radius: u32,
-    pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+    pub on_press: Option<M>,
     pub margin: Margin,
     pub padding: Padding,
+    _marker: PhantomData<App>,
 }
 
-impl<App> Button<App> {
+impl<M: Clone, App> Button<M, App> {
     pub fn new(label: String) -> Self {
         Self {
             label,
@@ -37,6 +38,7 @@ impl<App> Button<App> {
             on_press: None,
             margin: Margin::new(),
             padding: Padding::new(),
+            _marker: PhantomData,
         }
     }
 
@@ -96,15 +98,12 @@ impl<App> Button<App> {
         self
     }
 
-    pub fn on_press<F>(mut self, f: F) -> Self
-    where
-        F: FnMut(&mut App, &mut Window) + 'static,
-    {
-        self.on_press = Some(Rc::new(RefCell::new(f)));
+    pub fn on_press(mut self, m: M) -> Self {
+        self.on_press = Some(m);
         self
     }
 
-    pub fn build(self) -> Widget<App> {
+    pub fn build(self) -> Widget<M, App> {
         // Button color
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
         // Text color
@@ -123,7 +122,7 @@ impl<App> Button<App> {
         };
 
         // Create text widget
-        let child = Widget {
+        let child = Widget::<M, App> {
             id: next_id(),
             element: crate::WidgetElement::Text {
                 content: self.label,

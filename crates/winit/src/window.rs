@@ -1,4 +1,4 @@
-use glazeui_core::{Widget, WidgetElement, id::clear_counter, window::Window};
+use glazeui_core::{Widget, WidgetElement, id::clear_counter, window::Window as UserWindow};
 use glazeui_layout::{LayoutEngine, LayoutNode};
 use glazeui_vello::draw;
 use vello::{
@@ -10,14 +10,14 @@ use vello::{
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalPosition,
-    event::{ElementState, MouseButton, WindowEvent},
+    event::{ElementState, MouseButton, WindowEvent as WinitWindowEvent},
     event_loop::ActiveEventLoop,
     window::WindowId,
 };
 
 use crate::Program;
 
-impl<App> ApplicationHandler for Program<App> {
+impl<M: Clone, App> ApplicationHandler for Program<M, App> {
     #[cfg(target_arch = "wasm32")]
     fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
 
@@ -62,12 +62,17 @@ impl<App> ApplicationHandler for Program<App> {
         }
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _id: WindowId,
+        event: WinitWindowEvent,
+    ) {
         match event {
-            WindowEvent::CloseRequested => {
+            WinitWindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-            WindowEvent::Resized(new_size) => {
+            WinitWindowEvent::Resized(new_size) => {
                 if let (Some(window), Some(surface)) =
                     (self.window.as_ref(), self.renderer.surface.as_mut())
                 {
@@ -82,7 +87,7 @@ impl<App> ApplicationHandler for Program<App> {
                     window.request_redraw();
                 }
             }
-            WindowEvent::RedrawRequested => {
+            WinitWindowEvent::RedrawRequested => {
                 #[cfg(target_arch = "wasm32")]
                 {
                     if let Some(surface) = self.renderer.surface.as_ref() {
@@ -99,131 +104,133 @@ impl<App> ApplicationHandler for Program<App> {
                     }
                 }
 
-                if let (Some(window), Some(view), Some(surface), Some(font_cx), Some(layout_cx)) = (
-                    self.window.as_ref(),
-                    self.application.view_fn.as_ref(),
-                    self.renderer.surface.as_ref(),
-                    self.renderer.font_context.as_mut(),
-                    self.renderer.layout_context.as_mut(),
-                ) {
-                    // Reset scene
-                    self.renderer.scene.reset();
-
-                    // Get window size
-                    let size = window.inner_size();
-
-                    // // Remove all id's that was created in the past
-                    clear_counter();
-
-                    let mut layout = LayoutEngine::new();
-                    let ui = view(&mut self.application.user_struct);
-
-                    let scale = window.scale_factor();
-
-                    // Compute layout
-                    layout.compute(
-                        &ui,
-                        size.width as f32 / scale as f32,
-                        size.height as f32 / scale as f32,
-                        font_cx,
-                        layout_cx,
-                    );
-
-                    if let (Some(font_context), Some(layout_context)) = (
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    if let (Some(window), Some(surface), Some(font_cx), Some(layout_cx)) = (
+                        self.window.as_ref(),
+                        self.renderer.surface.as_ref(),
                         self.renderer.font_context.as_mut(),
                         self.renderer.layout_context.as_mut(),
                     ) {
-                        draw(
-                            &mut self.renderer.scene,
-                            font_context,
-                            layout_context,
-                            &mut layout,
-                            scale as f32,
+                        // Reset scene
+                        self.renderer.scene.reset();
+
+                        // Get window size
+                        let size = window.inner_size();
+
+                        // // Remove all id's that was created in the past
+                        clear_counter();
+
+                        let mut layout = LayoutEngine::new();
+                        let view_fn = self.application.view_fn;
+                        let ui = view_fn(&mut self.application.user_struct);
+
+                        let scale = window.scale_factor();
+
+                        // Compute layout
+                        layout.compute(
                             &ui,
+                            size.width as f32 / scale as f32,
+                            size.height as f32 / scale as f32,
+                            font_cx,
+                            layout_cx,
                         );
-                    }
 
-                    // Get the window size
-                    let width = surface.config.width;
-                    let height = surface.config.height;
+                        if let (Some(font_context), Some(layout_context)) = (
+                            self.renderer.font_context.as_mut(),
+                            self.renderer.layout_context.as_mut(),
+                        ) {
+                            draw(
+                                &mut self.renderer.scene,
+                                font_context,
+                                layout_context,
+                                &mut layout,
+                                scale as f32,
+                                &ui,
+                            );
+                        }
 
-                    // Get a handle to the device
-                    let device_handle = &self.renderer.context.devices[surface.dev_id];
+                        // Get the window size
+                        let width = surface.config.width;
+                        let height = surface.config.height;
 
-                    let (r, g, b, a) = (
-                        self.application.background.r,
-                        self.application.background.g,
-                        self.application.background.b,
-                        self.application.background.a,
-                    );
+                        // Get a handle to the device
+                        let device_handle = &self.renderer.context.devices[surface.dev_id];
 
-                    // Render to a texture, which we will later copy into the surface
-                    self.renderer.renderers[surface.dev_id]
-                        .as_mut()
-                        .unwrap()
-                        .render_to_texture(
-                            &device_handle.device,
-                            &device_handle.queue,
-                            &self.renderer.scene,
-                            &surface.target_view,
-                            &RenderParams {
-                                base_color: AlphaColor::from_rgba8(r, g, b, a),
-                                width,
-                                height,
-                                antialiasing_method: AaConfig::Area,
+                        let (r, g, b, a) = (
+                            self.application.background.r,
+                            self.application.background.g,
+                            self.application.background.b,
+                            self.application.background.a,
+                        );
+
+                        // Render to a texture, which we will later copy into the surface
+                        self.renderer.renderers[surface.dev_id]
+                            .as_mut()
+                            .unwrap()
+                            .render_to_texture(
+                                &device_handle.device,
+                                &device_handle.queue,
+                                &self.renderer.scene,
+                                &surface.target_view,
+                                &RenderParams {
+                                    base_color: AlphaColor::from_rgba8(r, g, b, a),
+                                    width,
+                                    height,
+                                    antialiasing_method: AaConfig::Area,
+                                },
+                            )
+                            .expect("failed to render to surface");
+
+                        // Get the surface's texture
+                        let surface_texture = surface
+                            .surface
+                            .get_current_texture()
+                            .expect("failed to get surface texture");
+
+                        // Perform the copy
+                        let mut encoder = device_handle.device.create_command_encoder(
+                            &wgpu::CommandEncoderDescriptor {
+                                label: Some("Surface Blit"),
                             },
-                        )
-                        .expect("failed to render to surface");
+                        );
+                        surface.blitter.copy(
+                            &device_handle.device,
+                            &mut encoder,
+                            &surface.target_view,
+                            &surface_texture
+                                .texture
+                                .create_view(&wgpu::TextureViewDescriptor::default()),
+                        );
+                        device_handle.queue.submit([encoder.finish()]);
 
-                    // Get the surface's texture
-                    let surface_texture = surface
-                        .surface
-                        .get_current_texture()
-                        .expect("failed to get surface texture");
+                        // Queue the texture to be presented on the surface
+                        surface_texture.present();
 
-                    // Perform the copy
-                    let mut encoder = device_handle.device.create_command_encoder(
-                        &wgpu::CommandEncoderDescriptor {
-                            label: Some("Surface Blit"),
-                        },
-                    );
-                    surface.blitter.copy(
-                        &device_handle.device,
-                        &mut encoder,
-                        &surface.target_view,
-                        &surface_texture
-                            .texture
-                            .create_view(&wgpu::TextureViewDescriptor::default()),
-                    );
-                    device_handle.queue.submit([encoder.finish()]);
+                        device_handle.device.poll(wgpu::PollType::Poll).unwrap();
 
-                    // Queue the texture to be presented on the surface
-                    surface_texture.present();
-
-                    device_handle.device.poll(wgpu::PollType::Poll).unwrap();
-
-                    self.renderer.layout = Some(layout);
+                        self.renderer.layout = Some(layout);
+                    }
                 }
             }
-            WindowEvent::MouseInput { state, button, .. } => {
+            WinitWindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
-                    if let (Some(window), Some(view), Some(layout)) = (
-                        self.window.as_ref(),
-                        self.application.view_fn.as_ref(),
-                        self.renderer.layout.as_ref(),
-                    ) {
+                    if let (Some(window), Some(layout)) =
+                        (self.window.as_ref(), self.renderer.layout.as_ref())
+                    {
                         // Remove all id's that was created in the past
                         clear_counter();
 
-                        // Get the root widget
-                        let ui = view(&mut self.application.user_struct);
-
                         // Create copy of window and give that to user, with that he can edit the window settings
-                        let mut user_window = Window {
+                        let mut user_window = UserWindow {
                             window: window.clone(),
                             background: &mut self.application.background,
                             eventloop: event_loop,
                         };
+
+                        // Get the root widget
+                        let view_fn = self.application.view_fn;
+                        let ui = view_fn(&mut self.application.user_struct);
 
                         check_click(
                             &mut user_window,
@@ -231,11 +238,12 @@ impl<App> ApplicationHandler for Program<App> {
                             layout,
                             &self.application.position,
                             &mut self.application.user_struct,
+                            &self.application.update_fn,
                         );
                     }
                 }
             }
-            WindowEvent::CursorMoved { position, .. } => {
+            WinitWindowEvent::CursorMoved { position, .. } => {
                 self.application.position = position;
             }
             _ => (),
@@ -243,12 +251,13 @@ impl<App> ApplicationHandler for Program<App> {
     }
 }
 
-fn check_click<App>(
-    window: &mut Window,
-    ui: &Widget<App>,
-    layout: &LayoutEngine<App>,
+fn check_click<M: Clone, App>(
+    window: &mut UserWindow,
+    ui: &Widget<M, App>,
+    layout: &LayoutEngine<M, App>,
     pos: &PhysicalPosition<f64>,
     user_struct: &mut App,
+    user_update: &fn(&mut App, M, &mut UserWindow),
 ) {
     // Get root widget info
     let layout_resolved = layout.get(ui.id).unwrap();
@@ -263,7 +272,7 @@ fn check_click<App>(
         {
             // Go to every child in vstack/hstack childrens
             for child in children {
-                check_click(window, child, layout, pos, user_struct);
+                check_click(window, child, layout, pos, user_struct, user_update);
             }
         } else if let WidgetElement::Container { child, .. } = &ui.element {
             // Get widget information (position, width and height)
@@ -273,13 +282,12 @@ fn check_click<App>(
             if clicked {
                 // If click was inside the widget and user provided a fn in on_press
                 if let Some(callback) = &ui.on_press {
-                    let mut cb = callback.borrow_mut();
-                    // Call on_press fn
-                    cb(user_struct, window);
+                    // Call update fn
+                    user_update(user_struct, callback.clone(), window);
                     // Redraw the window
                     window.request_redraw();
                 } else {
-                    check_click(window, child, layout, pos, user_struct);
+                    check_click(window, child, layout, pos, user_struct, user_update);
                 }
             }
         }

@@ -3,14 +3,14 @@ use std::marker::PhantomData;
 use crate::{Margin, Widget, id::next_id, style::Style};
 
 #[derive(Debug)]
-pub struct VStack<App: 'static> {
-    pub children: Vec<Widget<App>>,
+pub struct VStack<M: Clone, App: 'static> {
+    pub children: Vec<Widget<M, App>>,
     pub margin: Margin,
     pub spacing: i32,
 }
 
-impl<App> VStack<App> {
-    pub fn new(children: Vec<Widget<App>>) -> Self {
+impl<M: Clone, App> VStack<M, App> {
+    pub fn new(children: Vec<Widget<M, App>>) -> Self {
         Self {
             children,
             margin: Margin::new(),
@@ -18,11 +18,11 @@ impl<App> VStack<App> {
         }
     }
 
-    pub fn extend(&mut self, children: Vec<Widget<App>>) {
+    pub fn extend(&mut self, children: Vec<Widget<M, App>>) {
         self.children = children;
     }
 
-    pub fn push(&mut self, child: Widget<App>) {
+    pub fn push(&mut self, child: Widget<M, App>) {
         self.children.push(child);
     }
 
@@ -36,7 +36,7 @@ impl<App> VStack<App> {
         self
     }
 
-    pub fn build(self) -> Widget<App> {
+    pub fn build(self) -> Widget<M, App> {
         // VStack style
         let vstack_style = Style {
             spacing: self.spacing,

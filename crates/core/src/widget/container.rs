@@ -1,20 +1,20 @@
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::marker::PhantomData;
 
-use crate::{Margin, Padding, Widget, color::Color, id::next_id, style::Style, window::Window};
+use crate::{Margin, Padding, Widget, color::Color, id::next_id, style::Style};
 
-pub struct Container<App: 'static> {
-    pub child: Widget<App>,
+pub struct Container<M: Clone, App: 'static> {
+    pub child: Widget<M, App>,
     pub width: u32,
     pub height: u32,
     pub color: Color,
     pub radius: u32,
-    pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+    pub on_press: Option<M>,
     pub margin: Margin,
     pub padding: Padding,
 }
 
-impl<App> Container<App> {
-    pub fn new(child: Widget<App>) -> Self {
+impl<M: Clone, App> Container<M, App> {
+    pub fn new(child: Widget<M, App>) -> Self {
         Self {
             child,
             width: 100,
@@ -57,15 +57,12 @@ impl<App> Container<App> {
         self
     }
 
-    pub fn on_press<F>(mut self, f: F) -> Self
-    where
-        F: FnMut(&mut App, &mut Window) + 'static,
-    {
-        self.on_press = Some(Rc::new(RefCell::new(f)));
+    pub fn on_press(mut self, m: M) -> Self {
+        self.on_press = Some(m);
         self
     }
 
-    pub fn build(self) -> Widget<App> {
+    pub fn build(self) -> Widget<M, App> {
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
 
         // Container style

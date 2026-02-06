@@ -1,10 +1,9 @@
-use std::marker::PhantomData;
-
 use crate::core::{
     Backend, Color, Widget,
     window::{Theme, WindowLevel},
 };
 use crate::shell::{Application, Program, Renderer};
+use glazeui_core::window::Window;
 use parley::{FontContext, LayoutContext};
 use vello::{Scene, util::RenderContext};
 use winit::{
@@ -14,8 +13,12 @@ use winit::{
 };
 
 // Helper to start app
-pub fn start<App>(app: App, view_fn: fn(&mut App) -> Widget<App>) -> Run<App> {
-    Run::new(app, view_fn)
+pub fn start<M: Clone, App>(
+    app: App,
+    view_fn: fn(&mut App) -> Widget<M, App>,
+    update_fn: fn(&mut App, M, &mut Window),
+) -> Run<M, App> {
+    Run::new(app, view_fn, update_fn)
 }
 
 struct WindowSettings {
@@ -24,16 +27,20 @@ struct WindowSettings {
     vsync: bool,
 }
 
-pub struct Run<App: 'static> {
+pub struct Run<M: Clone, App: 'static> {
     user_struct: App,
     window_settings: WindowSettings,
-    view_fn: fn(&mut App) -> Widget<App>,
+    view_fn: fn(&mut App) -> Widget<M, App>,
+    update_fn: fn(&mut App, M, &mut Window),
     backend: Backend,
-    _marker: PhantomData<App>,
 }
 
-impl<App: 'static> Run<App> {
-    pub fn new(user_struct: App, view_fn: fn(&mut App) -> Widget<App>) -> Self {
+impl<M: Clone, App: 'static> Run<M, App> {
+    pub fn new(
+        user_struct: App,
+        view_fn: fn(&mut App) -> Widget<M, App>,
+        update_fn: fn(&mut App, M, &mut Window),
+    ) -> Self {
         Self {
             user_struct: user_struct,
             window_settings: WindowSettings {
@@ -42,8 +49,8 @@ impl<App: 'static> Run<App> {
                 vsync: true,
             },
             view_fn: view_fn,
+            update_fn: update_fn,
             backend: Backend::Auto,
-            _marker: PhantomData,
         }
     }
 
@@ -251,7 +258,7 @@ impl<App: 'static> Run<App> {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let mut program = Program::<App> {
+            let mut program = Program::<M, App> {
                 window: None,
                 window_attributes: self.window_settings.attributes,
                 renderer: Renderer {
@@ -267,7 +274,8 @@ impl<App: 'static> Run<App> {
                 },
                 application: Application {
                     user_struct: self.user_struct,
-                    view_fn: Some(self.view_fn),
+                    view_fn: self.view_fn,
+                    update_fn: self.update_fn,
                     background: self.window_settings.background,
                     position: PhysicalPosition::new(0.0, 0.0),
                 },
