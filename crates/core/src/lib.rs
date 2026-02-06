@@ -1,11 +1,8 @@
-use std::cell::RefCell;
 use std::fmt;
 use std::marker::PhantomData;
-use std::rc::Rc;
 
 use crate::id::next_id;
 use crate::style::Style;
-use crate::window::Window;
 mod align;
 mod backend;
 mod color;
@@ -30,16 +27,16 @@ use vello::peniko::ImageBrush;
 pub use weight::*;
 
 /// Widget with a generic Message type
-pub struct Widget<App: 'static> {
+pub struct Widget<M: Clone, App: 'static> {
     /// Unique Id
     pub id: u64,
 
     /// Type of UI element
     /// ['WidgetElement']
-    pub element: WidgetElement<App>,
+    pub element: WidgetElement<M, App>,
 
     /// Callback triggered when the widget is pressed
-    pub on_press: Option<Rc<RefCell<dyn FnMut(&mut App, &mut Window)>>>,
+    pub on_press: Option<M>,
 
     /// Style of element for layout engine
     pub style: Style,
@@ -47,17 +44,16 @@ pub struct Widget<App: 'static> {
     _marker: PhantomData<App>,
 }
 
-impl<App> fmt::Debug for Widget<App> {
+impl<M: Clone, App> fmt::Debug for Widget<M, App> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Widget")
             .field("id", &self.id)
             .field("element", &self.element)
-            .field("on_press", &self.on_press.as_ref().map(|_| "<callback>"))
             .finish()
     }
 }
 
-impl<App> Clone for Widget<App> {
+impl<M: Clone, App> Clone for Widget<M, App> {
     fn clone(&self) -> Self {
         Self {
             id: next_id(),
@@ -70,10 +66,10 @@ impl<App> Clone for Widget<App> {
 }
 
 /// Types of UI elements
-pub enum WidgetElement<App: 'static> {
+pub enum WidgetElement<M: Clone, App: 'static> {
     /// A Rectangle that holds a child
     Container {
-        child: Box<Widget<App>>,
+        child: Box<Widget<M, App>>,
         color: (u8, u8, u8, u8),
         radius: u32,
     },
@@ -92,12 +88,12 @@ pub enum WidgetElement<App: 'static> {
 
     /// Vertical list
     VStack {
-        children: Vec<Widget<App>>,
+        children: Vec<Widget<M, App>>,
     },
 
     /// Horizontal list
     HStack {
-        children: Vec<Widget<App>>,
+        children: Vec<Widget<M, App>>,
     },
 
     /// Empty space
@@ -105,7 +101,7 @@ pub enum WidgetElement<App: 'static> {
 }
 
 // Debug for WidgetElement
-impl<App> fmt::Debug for WidgetElement<App> {
+impl<M: Clone, App> fmt::Debug for WidgetElement<M, App> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WidgetElement::Container {
@@ -148,7 +144,7 @@ impl<App> fmt::Debug for WidgetElement<App> {
     }
 }
 
-impl<App> Clone for WidgetElement<App> {
+impl<M: Clone, App> Clone for WidgetElement<M, App> {
     fn clone(&self) -> Self {
         match self {
             WidgetElement::Image { image } => WidgetElement::Image {

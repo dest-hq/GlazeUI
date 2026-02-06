@@ -20,7 +20,6 @@ skrifa = "0.40.0"
 glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
 glazeui_vello = { version = "0.1.1", path = "crates/vello" }
-glazeui_window = { version = "0.1.1", path = "crates/window" }
 glazeui_layout = { version = "0.1.1", path = "crates/layout" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -50,7 +49,6 @@ glazeui = { version = "0.1.1", path = "." }
 glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
 glazeui_vello = { version = "0.1.1", path = "crates/vello" }
-glazeui_window = { version = "0.1.1", path = "crates/window" }
 glazeui_layout = { version = "0.1.1", path = "crates/layout" }
 winit = "0.30.12"
 wgpu = "27.0.1"

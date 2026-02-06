@@ -2,18 +2,20 @@ use std::marker::PhantomData;
 
 use crate::{Widget, id::next_id, style::Style};
 
-pub struct Spacer<App> {
+pub struct Spacer<M: Clone, App> {
     pub width: u32,
     pub height: u32,
-    _marker: PhantomData<App>,
+    _marker_app: PhantomData<App>,
+    _marker_message: PhantomData<M>,
 }
 
-impl<App> Spacer<App> {
+impl<M: Clone, App> Spacer<M, App> {
     pub fn new() -> Self {
         Self {
             width: 0,
             height: 0,
-            _marker: PhantomData,
+            _marker_app: PhantomData,
+            _marker_message: PhantomData,
         }
     }
 
@@ -27,7 +29,7 @@ impl<App> Spacer<App> {
         self
     }
 
-    pub fn build(self) -> Widget<App> {
+    pub fn build(self) -> Widget<M, App> {
         // Spacer style
         let spacer_style = Style {
             width: self.width,

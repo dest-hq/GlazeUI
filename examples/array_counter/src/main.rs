@@ -1,6 +1,9 @@
 use glazeui::{
     application::start,
-    core::{Color, Widget, button, hstack, spacer, vstack, window},
+    core::{
+        Color, Widget, button, hstack, spacer, vstack,
+        window::{self, Window},
+    },
 };
 
 fn main() -> glazeui::Result {
@@ -10,7 +13,7 @@ fn main() -> glazeui::Result {
         decrement_len_counters: 1,
     };
 
-    start(init, ArrayCount::view)
+    start(init, ArrayCount::view, ArrayCount::update)
         .title("Array of Counters App")
         .theme(window::Theme::Light) // Titlebar theme
         .background(Color::rgb(255, 255, 255)) // Sorry for flashbang :)
@@ -23,15 +26,32 @@ struct ArrayCount {
     decrement_len_counters: u8,
 }
 
+#[derive(Clone)]
+enum Message {
+    AddIncrementCounter,
+    AddDecrementCounter,
+    Increment,
+    Decrement,
+}
+
 impl ArrayCount {
-    fn view(&mut self) -> Widget<ArrayCount> {
+    fn update(&mut self, message: Message, _: &mut Window) {
+        match message {
+            Message::AddDecrementCounter => self.decrement_len_counters += 1,
+            Message::AddIncrementCounter => self.increment_len_counters += 1,
+            Message::Increment => self.count += 1,
+            Message::Decrement => self.count -= 1,
+        }
+    }
+
+    fn view(&mut self) -> Widget<Message, ArrayCount> {
         let add_increment = button("Add Increment Counter")
             .color(Color::rgb(54, 104, 237))
             .width(250)
             .height(50)
             .radius(160)
             .label_size(20)
-            .on_press(|app: &mut ArrayCount, _| app.increment_len_counters += 1)
+            .on_press(Message::AddIncrementCounter)
             .build();
         let add_decrement = button("Add Decrement Counter")
             .color(Color::rgb(254, 55, 66))
@@ -39,7 +59,7 @@ impl ArrayCount {
             .height(50)
             .radius(160)
             .label_size(20)
-            .on_press(|app: &mut ArrayCount, _| app.decrement_len_counters += 1)
+            .on_press(Message::AddDecrementCounter)
             .build();
 
         // Right now, we use a spacing widget because the layout engine doesn't support margins or padding
@@ -58,7 +78,7 @@ impl ArrayCount {
                 .height(75)
                 .color(Color::rgb(54, 104, 237))
                 .label_size(26)
-                .on_press(|app: &mut ArrayCount, _| app.count += 1)
+                .on_press(Message::Increment)
                 .build();
 
             increment_buttons.push(new_button);
@@ -72,7 +92,7 @@ impl ArrayCount {
                 .height(75)
                 .color(Color::rgb(254, 55, 66))
                 .label_size(26)
-                .on_press(|app: &mut ArrayCount, _| app.count -= 1)
+                .on_press(Message::Decrement)
                 .build();
 
             decrement_buttons.push(new_button);

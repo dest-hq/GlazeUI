@@ -1,6 +1,6 @@
 use glazeui::{
     application::start,
-    core::{Widget, text, vstack},
+    core::{Widget, text, vstack, window::Window},
 };
 
 fn main() -> glazeui::Result {
@@ -8,7 +8,9 @@ fn main() -> glazeui::Result {
         text: "Hello world!".to_string(),
     };
 
-    start(init, HelloWorld::view).title("Hello world!").run()
+    start(init, HelloWorld::view, HelloWorld::update)
+        .title("Hello world!")
+        .run()
     // This starts the app with the title of "Hello world!" and with the width and height of 900 pixels
     // P.S. You can add ".vsync(false)" between "start(app)" and ".run()" to disable VSync which will make your GPU draw the app as fast as it can
     // Note: As of writing this, disabling VSync will flood your terminal with the amount of frames per second every frame and will also induce a high load on your GPU
@@ -18,8 +20,12 @@ struct HelloWorld {
     text: String,
 }
 
+#[derive(Clone)]
+enum Message {}
+
 impl HelloWorld {
-    fn view(&mut self) -> Widget<HelloWorld> {
+    fn update(&mut self, _: Message, _: &mut Window) {}
+    fn view(&mut self) -> Widget<Message, HelloWorld> {
         let hello_world_text = text(&self.text)
             .size(36) // Set text size to 36 pixels
             .build(); // Turn text element into Widget
