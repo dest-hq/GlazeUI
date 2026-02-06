@@ -16,10 +16,8 @@ Inspired by [Iced](https://github.com/iced-rs/iced) and [Egui](https://github.co
 
 ## Features
 
-- **Cross-platform**: GlazeUI supports Windows, macOS* and Linux with rendering using [wgpu](https://github.com/gfx-rs/wgpu) via [vello](https://github.com/linebender/vello)
+- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [wgpu](https://github.com/gfx-rs/wgpu) via [vello](https://github.com/linebender/vello)
 - Easy to use
- 
-<sub>* - Untested, but should work</sub>
 
 ## Quickstart
 
