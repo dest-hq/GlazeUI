@@ -10,7 +10,7 @@
 
 Cross-platform GUI library, written in Rust
 
-Inspired by [Iced](https://github.com/iced-rs/iced) and [Egui](https://github.com/emilk/egui)
+Inspired by [Iced](https://github.com/iced-rs/iced)
 
 </div>
 
