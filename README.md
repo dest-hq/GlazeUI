@@ -22,39 +22,69 @@ Inspired by [Iced](https://github.com/iced-rs/iced)
 ## Quickstart
 
 ```rust
-use std::path::Path;
-
 use glazeui::{
     application::start,
-    core::{Widget, image, text, vstack, window::Window},
+    core::{
+        Color, Widget, button, hstack, spacer, vstack,
+        window::{self, Window},
+    },
 };
 
 fn main() -> glazeui::Result {
-    let init = Image {};
+    let init = Count { count: 0 };
 
-    start(init, Image::view, Image::update)
-        .title("Ferris Image")
+    start(init, Count::view, Count::update)
+        .title("Counter App")
+        .theme(window::Theme::Light) // Titlebar theme
+        .background(Color::rgb(255, 255, 255))
         .run()
 }
 
-struct Image {}
+struct Count {
+    count: i32,
+}
 
 #[derive(Clone)]
-enum Message {}
+enum Message {
+    Increment,
+    Decrement,
+}
 
-impl Image {
-    fn update(&mut self, _: Message, _: &mut Window) {}
-    fn view(&mut self) -> Widget<Message, Image> {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("assets")
-            .join("ferris.png");
-        let ferris_text = text("Ferris").size(35).build();
-        let image = image()
-            .from_path(path, Some(300), Some(200)) // If one of size's (width, height) is set to None it will be set auto to image native size
-            .unwrap()
+impl Count {
+    fn update(&mut self, message: Message, _: &mut Window) {
+        match message {
+            Message::Increment => self.count += 1,
+            Message::Decrement => self.count -= 1,
+        }
+    }
+
+    fn view(&mut self) -> Widget<Message, Count> {
+        let increment = button(&self.count.to_string())
+            .radius(360)
+            .width(75)
+            .height(75)
+            .color(Color::rgb(54, 104, 237))
+            .label_size(26)
+            .on_press(Message::Increment)
             .build();
-        vstack!(ferris_text, image).spacing(20).build()
+
+        let decrement = button(&self.count.to_string())
+            .radius(360)
+            .width(75)
+            .height(75)
+            .color(Color::rgb(254, 55, 66))
+            .label_size(26)
+            .on_press(Message::Decrement)
+            .build();
+
+        let spacing_left = spacer().width(20).build();
+        let spacing_top = spacer().height(20).build();
+
+        let buttons = hstack!(spacing_left, increment, decrement)
+            .spacing(20)
+            .build();
+
+        vstack!(spacing_top, buttons).build()
     }
 }
 ```
