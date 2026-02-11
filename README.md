@@ -88,7 +88,7 @@ impl Count {
     }
 }
 ```
-<img width="500" height="500" alt="Ferris" src="https://github.com/user-attachments/assets/226a6194-d575-42e5-bb26-faa822d89d26" />
+<img width="500" height="500" alt="Counter" src="https://github.com/user-attachments/assets/4e9ba8b7-bb97-44a1-99f8-7b264e645a44" />
 
 ## License
 This library is dual licensed with both the MIT license ([LICENSE-MIT](LICENSE-MIT)) and the Apache-2.0 license ([LICENSE-APACHE](LICENSE-APACHE)) meaning that you can use either the MIT license or the Apache-2.0 license, depending on your needs
