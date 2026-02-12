@@ -5,7 +5,7 @@ v0.1.1
 - [x] - Optimize GlazeUI
 
 v0.1.2
-- [x] - Add essential functions for widgets, such as align, padding, etc.
+- [ ] - Add essential functions for widgets, such as align, padding, etc.
 - [ ] - Custom layout engine
 
 v0.2.0
