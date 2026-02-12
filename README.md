@@ -16,7 +16,7 @@ Inspired by [Iced](https://github.com/iced-rs/iced)
 
 ## Features
 
-- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [wgpu](https://github.com/gfx-rs/wgpu) via [vello](https://github.com/linebender/vello)
+- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [multirender](https://github.com/dest-hq/multirender)
 - Easy to use
 
 ## Quickstart
@@ -58,7 +58,7 @@ impl Count {
         }
     }
 
-    fn view(&mut self) -> Widget<Message, Count> {
+    fn view(&mut self) -> Widget<Message> {
         let increment = button(&self.count.to_string())
             .radius(360)
             .width(75)
@@ -91,4 +91,4 @@ impl Count {
 <img width="500" height="500" alt="Counter" src="https://github.com/user-attachments/assets/4e9ba8b7-bb97-44a1-99f8-7b264e645a44" />
 
 ## License
-This library is dual licensed with both the MIT license ([LICENSE-MIT](LICENSE-MIT)) and the Apache-2.0 license ([LICENSE-APACHE](LICENSE-APACHE)) meaning that you can use either the MIT license or the Apache-2.0 license, depending on your needs
+This library is dual licensed with both the MIT license ([LICENSE-MIT](LICENSE-MIT)) and the Apache-2.0 license ([LICENSE-APACHE](LICENSE-APACHE)), meaning that you can use either the MIT license or the Apache-2.0 license, depending on your needs
