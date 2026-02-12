@@ -224,6 +224,16 @@ fn check_click<M: Clone, App>(
                 );
             }
         } else if let WidgetElement::Container { child, .. } = &ui.element {
+            check_click(
+                window,
+                child,
+                render_state,
+                layout,
+                pos,
+                user_struct,
+                user_update,
+            );
+
             // Get widget information (position, width and height)
             let layout_resolved = layout.get(ui.id).unwrap();
             // Check if was a click inside the widget
@@ -248,16 +258,33 @@ fn check_click<M: Clone, App>(
                     if let Some(window) = window {
                         window.request_redraw();
                     }
-                } else {
-                    check_click(
-                        window,
-                        child,
-                        render_state,
-                        layout,
-                        pos,
-                        user_struct,
-                        user_update,
-                    );
+                }
+            }
+        } else if let WidgetElement::Text { .. } = ui.element {
+            // Get widget information (position, width and height)
+            let layout_resolved = layout.get(ui.id).unwrap();
+            // Check if was a click inside the widget
+            let clicked = check_click_inside(layout_resolved, *pos);
+            if clicked {
+                // If click was inside the widget and user provided a fn in on_press
+                if let Some(callback) = &ui.on_press {
+                    // Call update fn
+                    user_update(user_struct, callback.clone(), window);
+                    // Redraw the window
+                    let window = match render_state {
+                        RenderState::Active { window, renderer } => {
+                            if renderer.is_active() {
+                                Some(window)
+                            } else {
+                                None
+                            }
+                        }
+                        RenderState::Suspended(_) => None,
+                    };
+
+                    if let Some(window) = window {
+                        window.request_redraw();
+                    }
                 }
             }
         }

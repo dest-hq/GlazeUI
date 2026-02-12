@@ -12,6 +12,7 @@ pub struct Text<M: Clone> {
     pub spacing: i32,
     pub color: Color,
     pub margin: Margin,
+    pub on_press: Option<M>,
     _marker: PhantomData<M>,
 }
 
@@ -25,6 +26,7 @@ impl<M: Clone> Text<M> {
             spacing: 0,
             color: Color::rgb(255, 255, 255),
             margin: Margin::new(),
+            on_press: None,
             _marker: PhantomData,
         }
     }
@@ -47,6 +49,11 @@ impl<M: Clone> Text<M> {
 
     pub fn margin(mut self, margin: Margin) -> Self {
         self.margin = margin;
+        self
+    }
+
+    pub fn on_press(mut self, m: M) -> Self {
+        self.on_press = Some(m);
         self
     }
 
@@ -79,7 +86,7 @@ impl<M: Clone> Text<M> {
                 style: self.style,
                 color: (r, g, b, a),
             },
-            on_press: None,
+            on_press: self.on_press,
             style: text_style,
         }
     }

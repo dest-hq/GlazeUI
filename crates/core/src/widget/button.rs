@@ -15,6 +15,7 @@ pub struct Button<M: Clone> {
     pub color: Color,
     pub radius: u32,
     pub on_press: Option<M>,
+    pub label_on_press: Option<M>,
     pub margin: Margin,
     pub padding: Padding,
 }
@@ -33,6 +34,7 @@ impl<M: Clone> Button<M> {
             color: Color::rgb(50, 50, 51),
             radius: 0,
             on_press: None,
+            label_on_press: None,
             margin: Margin::new(),
             padding: Padding::new(),
         }
@@ -76,6 +78,11 @@ impl<M: Clone> Button<M> {
     /// Extra spacing between letters
     pub fn label_spacing(mut self, spacing: i32) -> Self {
         self.label_spacing = spacing;
+        self
+    }
+
+    pub fn label_on_press(mut self, m: M) -> Self {
+        self.label_on_press = Some(m);
         self
     }
 
@@ -127,7 +134,7 @@ impl<M: Clone> Button<M> {
                 style: self.label_style,
                 color: (r2, g2, b2, a2),
             },
-            on_press: None,
+            on_press: self.label_on_press,
             style: text_style,
         };
 
