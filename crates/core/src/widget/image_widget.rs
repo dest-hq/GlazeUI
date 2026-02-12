@@ -8,24 +8,22 @@ use crate::id::next_id;
 use crate::style::Style;
 use crate::{Margin, Widget};
 
-pub struct ImageWidget<M: Clone, App> {
+pub struct ImageWidget<M: Clone> {
     pub image: Option<ImageBrush>,
     pub width: u32,
     pub height: u32,
     pub margin: Margin,
-    _marker_app: PhantomData<App>,
-    _marker_message: PhantomData<M>,
+    _marker: PhantomData<M>,
 }
 
-impl<M: Clone, App> ImageWidget<M, App> {
+impl<M: Clone> ImageWidget<M> {
     pub fn new() -> Self {
         Self {
             image: None,
             width: 0,
             height: 0,
             margin: Margin::new(),
-            _marker_app: PhantomData,
-            _marker_message: PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -91,7 +89,7 @@ impl<M: Clone, App> ImageWidget<M, App> {
         Ok(self)
     }
 
-    pub fn build(self) -> Widget<M, App> {
+    pub fn build(self) -> Widget<M> {
         let image_style = Style {
             width: self.width,
             height: self.height,
@@ -106,7 +104,6 @@ impl<M: Clone, App> ImageWidget<M, App> {
             },
             on_press: None,
             style: image_style,
-            _marker: PhantomData,
         }
     }
 }

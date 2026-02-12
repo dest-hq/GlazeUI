@@ -1,9 +1,7 @@
-use std::marker::PhantomData;
-
 use crate::{Margin, Padding, Widget, color::Color, id::next_id, style::Style};
 
-pub struct Container<M: Clone, App: 'static> {
-    pub child: Widget<M, App>,
+pub struct Container<M: Clone> {
+    pub child: Widget<M>,
     pub width: u32,
     pub height: u32,
     pub color: Color,
@@ -13,8 +11,8 @@ pub struct Container<M: Clone, App: 'static> {
     pub padding: Padding,
 }
 
-impl<M: Clone, App> Container<M, App> {
-    pub fn new(child: Widget<M, App>) -> Self {
+impl<M: Clone> Container<M> {
+    pub fn new(child: Widget<M>) -> Self {
         Self {
             child,
             width: 100,
@@ -62,7 +60,7 @@ impl<M: Clone, App> Container<M, App> {
         self
     }
 
-    pub fn build(self) -> Widget<M, App> {
+    pub fn build(self) -> Widget<M> {
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
 
         // Container style
@@ -83,7 +81,6 @@ impl<M: Clone, App> Container<M, App> {
             },
             on_press: self.on_press,
             style: container_style,
-            _marker: PhantomData,
         }
     }
 }

@@ -1,11 +1,9 @@
-use std::marker::PhantomData;
-
 use crate::{
     Margin, Padding, TextStyle, Widget, align::Align, color::Color, id::next_id, style::Style,
     weight::TextWeight,
 };
 
-pub struct Button<M: Clone, App: 'static> {
+pub struct Button<M: Clone> {
     pub label: String,
     pub label_size: u32,
     pub label_weight: TextWeight,
@@ -19,10 +17,9 @@ pub struct Button<M: Clone, App: 'static> {
     pub on_press: Option<M>,
     pub margin: Margin,
     pub padding: Padding,
-    _marker: PhantomData<App>,
 }
 
-impl<M: Clone, App> Button<M, App> {
+impl<M: Clone> Button<M> {
     pub fn new(label: String) -> Self {
         Self {
             label,
@@ -38,7 +35,6 @@ impl<M: Clone, App> Button<M, App> {
             on_press: None,
             margin: Margin::new(),
             padding: Padding::new(),
-            _marker: PhantomData,
         }
     }
 
@@ -103,7 +99,7 @@ impl<M: Clone, App> Button<M, App> {
         self
     }
 
-    pub fn build(self) -> Widget<M, App> {
+    pub fn build(self) -> Widget<M> {
         // Button color
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
         // Text color
@@ -122,7 +118,7 @@ impl<M: Clone, App> Button<M, App> {
         };
 
         // Create text widget
-        let child = Widget::<M, App> {
+        let child = Widget::<M> {
             id: next_id(),
             element: crate::WidgetElement::Text {
                 content: self.label,
@@ -133,7 +129,6 @@ impl<M: Clone, App> Button<M, App> {
             },
             on_press: None,
             style: text_style,
-            _marker: PhantomData,
         };
 
         // Container style
@@ -155,7 +150,6 @@ impl<M: Clone, App> Button<M, App> {
             },
             on_press: self.on_press,
             style: container_style,
-            _marker: PhantomData,
         }
     }
 }
