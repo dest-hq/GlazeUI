@@ -8,20 +8,45 @@ keywords = { workspace = true }
 categories = { workspace = true }
 description = { workspace = true }
 
+[features]
+default = ["skia", "cpu"]
+skia = [
+  "dep:multirender_skia",
+  "glazeui_winit/skia",
+  "glazeui_core/skia"
+]
+cpu = [
+  "dep:multirender_vello_cpu",
+  "glazeui_winit/cpu",
+  "glazeui_core/cpu"
+]
+vello = [
+  "dep:multirender_vello",
+  "glazeui_winit/vello",
+  "glazeui_core/vello"
+]
+hybrid = [
+  "dep:multirender_vello_hybrid",
+  "glazeui_winit/hybrid",
+  "glazeui_core/hybrid"
+]
+all = ["skia", "cpu", "vello", "hybrid"]
+
 [dependencies]
 winit = "0.30.12"
-wgpu = "27.0.1"
 pollster = "0.4.0"
-bytemuck = "1.24.0"
-image = "0.25.9"
-vello = "0.7.0"
 parley = "0.7.0"
-skrifa = "0.40.0"
-glazeui_core = { version = "0.1.1", path = "crates/core" }
-glazeui_winit = { version = "0.1.1", path = "crates/winit" }
-glazeui_vello = { version = "0.1.1", path = "crates/vello" }
-glazeui_layout = { version = "0.1.1", path = "crates/layout" }
-glazeui_render = { version = "0.1.1", path = "crates/render" }
+glazeui_core.workspace = true
+glazeui_winit.workspace = true
+glazeui_layout.workspace = true
+glazeui_render.workspace = true
+multirender = {version = "0.1.0"}
+multirender_skia = {version = "0.1.0", optional = true}
+multirender_vello = {version = "0.1.0", optional = true}
+multirender_vello_cpu = { version = "0.1.0", features = [
+  "softbuffer_window_renderer",
+], optional = true}
+multirender_vello_hybrid = {version = "0.1.0", optional = true}
 
 [workspace]
 members = ["crates/*",
@@ -41,15 +66,12 @@ description = "Cross-platform GUI library, written in Rust"
 glazeui = { version = "0.1.1", path = "." }
 glazeui_core = { version = "0.1.1", path = "crates/core" }
 glazeui_winit = { version = "0.1.1", path = "crates/winit" }
-glazeui_vello = { version = "0.1.1", path = "crates/vello" }
 glazeui_layout = { version = "0.1.1", path = "crates/layout" }
 glazeui_render = { version = "0.1.1", path = "crates/render" }
+multirender = {version = "0.1.0"}
 winit = "0.30.12"
-wgpu = "27.0.1"
-vello = "0.7.0"
 parley = "0.7.0"
 skrifa = "0.40.0"
-bytemuck = "1.24.0"
 image = "0.25.9"
 pollster = "0.4.0"
 peniko = "0.6.0"

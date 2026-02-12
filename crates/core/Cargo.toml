@@ -8,7 +8,18 @@ categories.workspace = true
 keywords.workspace = true
 description.workspace = true
 
+[features]
+skia = [
+]
+cpu = [
+]
+vello = [
+]
+hybrid = [
+]
+all = ["skia", "cpu", "vello", "hybrid"]
+
 [dependencies]
-vello.workspace = true
 image.workspace = true
 winit.workspace = true
+peniko.workspace = true

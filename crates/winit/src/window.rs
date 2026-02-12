@@ -1,12 +1,15 @@
 use glazeui_core::{Widget, WidgetElement, id::clear_counter, window::Window as UserWindow};
 use glazeui_layout::{LayoutEngine, LayoutNode};
-use glazeui_vello::draw;
-use vello::{
-    AaConfig, RenderParams, Renderer as VelloRenderer, RendererOptions,
-    peniko::color::AlphaColor,
-    util::{RenderContext, RenderSurface},
-    wgpu,
-};
+use glazeui_render::{RenderState, Renderer};
+use multirender::WindowRenderer;
+#[cfg(feature = "skia")]
+use multirender_skia::SkiaWindowRenderer;
+#[cfg(feature = "vello")]
+use multirender_vello::VelloWindowRenderer;
+#[cfg(feature = "cpu")]
+use multirender_vello_cpu::SoftbufferWindowRenderer;
+#[cfg(feature = "hybrid")]
+use multirender_vello_hybrid::VelloHybridWindowRenderer;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalPosition,
@@ -18,206 +21,142 @@ use winit::{
 use crate::Program;
 
 impl<M: Clone, App> ApplicationHandler for Program<M, App> {
-    #[cfg(target_arch = "wasm32")]
-    fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        use std::sync::Arc;
-
-        if self.window.is_none() {
-            // Get window settings
-            let win_attr = self.window_attributes.clone();
-            // Create window
-            let window = Arc::new(
-                event_loop
-                    .create_window(win_attr)
-                    .expect("Creating window error"),
-            );
-            self.window = Some(window.clone());
-
-            let size = window.inner_size();
-
-            // Set vsync mode
-            let mode = if self.renderer.vsync {
-                wgpu::PresentMode::AutoVsync
-            } else {
-                wgpu::PresentMode::AutoNoVsync
-            };
-
-            let surface_future =
-                self.renderer
-                    .context
-                    .create_surface(window.clone(), size.width, size.height, mode);
-            let surface = pollster::block_on(surface_future).expect("Error creating surface");
-
-            // Create a vello Renderer for the surface (using its device id)
-            self.renderer
-                .renderers
-                .resize_with(self.renderer.context.devices.len(), || None);
-            self.renderer.renderers[surface.dev_id]
-                .get_or_insert_with(|| create_vello_renderer(&self.renderer.context, &surface));
-
-            self.renderer.surface = Some(surface);
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        if let RenderState::Active { window, .. } = &self.renderer.render_state {
+            self.renderer.render_state = RenderState::Suspended(Some(window.clone()));
         }
+    }
+
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let renderer = match &mut self.renderer.backend {
+            #[cfg(feature = "skia")]
+            glazeui_core::Backend::Skia => Renderer::from(SkiaWindowRenderer::new()),
+            #[cfg(feature = "cpu")]
+            glazeui_core::Backend::CPU => Renderer::from(SoftbufferWindowRenderer::new()),
+            #[cfg(feature = "hybrid")]
+            glazeui_core::Backend::Hybrid => Renderer::from(VelloHybridWindowRenderer::new()),
+            #[cfg(feature = "vello")]
+            glazeui_core::Backend::Vello => Renderer::from(VelloWindowRenderer::new()),
+        };
+        let fallback_backend = self.renderer.fallback_backend.clone();
+        self.set_backend(renderer, &fallback_backend, event_loop);
     }
 
     fn window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
-        _id: WindowId,
+        id: WindowId,
         event: WinitWindowEvent,
     ) {
+        let RenderState::Active { window, renderer } = &mut self.renderer.render_state else {
+            return;
+        };
+
+        if window.id() != id {
+            return;
+        }
+
         match event {
             WinitWindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-            WinitWindowEvent::Resized(new_size) => {
-                if let (Some(window), Some(surface)) =
-                    (self.window.as_ref(), self.renderer.surface.as_mut())
-                {
-                    if new_size.width != 0 && new_size.height != 0 {
-                        let scale = window.scale_factor();
-                        self.renderer.context.resize_surface(
-                            surface,
-                            new_size.width / scale as u32,
-                            new_size.height / scale as u32,
-                        );
-                    }
-                    window.request_redraw();
-                }
+            WinitWindowEvent::Resized(physical_size) => {
+                self.width = physical_size.width;
+                self.height = physical_size.height;
+                renderer.set_size(self.width, self.height);
+                self.request_redraw();
             }
             WinitWindowEvent::RedrawRequested => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    if let Some(surface) = self.renderer.surface.as_ref() {
-                        let dev_id = surface.dev_id;
+                // Remove all id's that was created in the past
+                clear_counter();
 
-                        if self.renderer.renderers.len() <= dev_id {
-                            self.renderer.renderers.resize_with(dev_id + 1, || None);
-                        }
+                let mut layout = LayoutEngine::new();
+                let view_fn = self.application.view_fn;
+                let ui = view_fn(&mut self.application.user_struct);
 
-                        if self.renderer.renderers[dev_id].is_none() {
-                            self.renderer.renderers[dev_id] =
-                                Some(create_vello_renderer(&self.renderer.context, surface));
-                        }
-                    }
-                }
+                let scale = window.scale_factor();
 
-                #[cfg(not(target_arch = "wasm32"))]
-                {
-                    if let (Some(window), Some(surface), Some(font_cx), Some(layout_cx)) = (
-                        self.window.as_ref(),
-                        self.renderer.surface.as_ref(),
-                        self.renderer.font_context.as_mut(),
-                        self.renderer.layout_context.as_mut(),
-                    ) {
-                        // Reset scene
-                        self.renderer.scene.reset();
+                // Compute layout
+                layout.compute(
+                    &ui,
+                    self.width as f32 / scale as f32,
+                    self.height as f32 / scale as f32,
+                    &mut self.renderer.font_context,
+                    &mut self.renderer.layout_context,
+                );
 
-                        // Get window size
-                        let size = window.inner_size();
+                self.renderer.layout = layout;
 
-                        // // Remove all id's that was created in the past
-                        clear_counter();
-
-                        let mut layout = LayoutEngine::new();
-                        let view_fn = self.application.view_fn;
-                        let ui = view_fn(&mut self.application.user_struct);
-
-                        let scale = window.scale_factor();
-
-                        // Compute layout
-                        layout.compute(
+                match renderer {
+                    #[cfg(feature = "skia")]
+                    Renderer::Skia(r) => r.render(|p| {
+                        Self::draw_scene(
+                            p,
+                            &mut self.renderer.font_context,
+                            &mut self.renderer.layout_context,
+                            &mut self.renderer.layout,
+                            1.0,
                             &ui,
-                            size.width as f32 / scale as f32,
-                            size.height as f32 / scale as f32,
-                            font_cx,
-                            layout_cx,
+                            self.application.background,
+                            (self.width, self.height),
                         );
-
-                        if let (Some(font_context), Some(layout_context)) = (
-                            self.renderer.font_context.as_mut(),
-                            self.renderer.layout_context.as_mut(),
-                        ) {
-                            draw(
-                                &mut self.renderer.scene,
-                                font_context,
-                                layout_context,
-                                &mut layout,
-                                scale as f32,
-                                &ui,
-                            );
-                        }
-
-                        // Get the window size
-                        let width = surface.config.width;
-                        let height = surface.config.height;
-
-                        // Get a handle to the device
-                        let device_handle = &self.renderer.context.devices[surface.dev_id];
-
-                        let (r, g, b, a) = (
-                            self.application.background.r,
-                            self.application.background.g,
-                            self.application.background.b,
-                            self.application.background.a,
+                    }),
+                    #[cfg(feature = "cpu")]
+                    Renderer::CpuSoftbuffer(r) => r.render(|p| {
+                        Self::draw_scene(
+                            p,
+                            &mut self.renderer.font_context,
+                            &mut self.renderer.layout_context,
+                            &mut self.renderer.layout,
+                            1.0,
+                            &ui,
+                            self.application.background,
+                            (self.width, self.height),
                         );
-
-                        // Render to a texture, which we will later copy into the surface
-                        self.renderer.renderers[surface.dev_id]
-                            .as_mut()
-                            .unwrap()
-                            .render_to_texture(
-                                &device_handle.device,
-                                &device_handle.queue,
-                                &self.renderer.scene,
-                                &surface.target_view,
-                                &RenderParams {
-                                    base_color: AlphaColor::from_rgba8(r, g, b, a),
-                                    width,
-                                    height,
-                                    antialiasing_method: AaConfig::Area,
-                                },
-                            )
-                            .expect("failed to render to surface");
-
-                        // Get the surface's texture
-                        let surface_texture = surface
-                            .surface
-                            .get_current_texture()
-                            .expect("failed to get surface texture");
-
-                        // Perform the copy
-                        let mut encoder = device_handle.device.create_command_encoder(
-                            &wgpu::CommandEncoderDescriptor {
-                                label: Some("Surface Blit"),
-                            },
+                    }),
+                    #[cfg(feature = "vello")]
+                    Renderer::Gpu(r) => r.render(|p| {
+                        Self::draw_scene(
+                            p,
+                            &mut self.renderer.font_context,
+                            &mut self.renderer.layout_context,
+                            &mut self.renderer.layout,
+                            1.0,
+                            &ui,
+                            self.application.background,
+                            (self.width, self.height),
                         );
-                        surface.blitter.copy(
-                            &device_handle.device,
-                            &mut encoder,
-                            &surface.target_view,
-                            &surface_texture
-                                .texture
-                                .create_view(&wgpu::TextureViewDescriptor::default()),
+                    }),
+                    #[cfg(feature = "hybrid")]
+                    Renderer::Hybrid(r) => r.render(|p| {
+                        Self::draw_scene(
+                            p,
+                            &mut self.renderer.font_context,
+                            &mut self.renderer.layout_context,
+                            &mut self.renderer.layout,
+                            1.0,
+                            &ui,
+                            self.application.background,
+                            (self.width, self.height),
                         );
-                        device_handle.queue.submit([encoder.finish()]);
-
-                        // Queue the texture to be presented on the surface
-                        surface_texture.present();
-
-                        device_handle.device.poll(wgpu::PollType::Poll).unwrap();
-
-                        self.renderer.layout = Some(layout);
-                    }
-                }
+                    }),
+                    Renderer::Null(r) => r.render(|p| {
+                        Self::draw_scene(
+                            p,
+                            &mut self.renderer.font_context,
+                            &mut self.renderer.layout_context,
+                            &mut self.renderer.layout,
+                            1.0,
+                            &ui,
+                            self.application.background,
+                            (self.width, self.height),
+                        );
+                    }),
+                };
             }
             WinitWindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
-                    if let (Some(window), Some(layout)) =
-                        (self.window.as_ref(), self.renderer.layout.as_ref())
-                    {
+                    if let Some(window) = self.window.as_ref() {
                         // Remove all id's that was created in the past
                         clear_counter();
 
@@ -235,7 +174,8 @@ impl<M: Clone, App> ApplicationHandler for Program<M, App> {
                         check_click(
                             &mut user_window,
                             &ui,
-                            layout,
+                            &self.renderer.render_state,
+                            &self.renderer.layout,
                             &self.application.position,
                             &mut self.application.user_struct,
                             &self.application.update_fn,
@@ -253,8 +193,9 @@ impl<M: Clone, App> ApplicationHandler for Program<M, App> {
 
 fn check_click<M: Clone, App>(
     window: &mut UserWindow,
-    ui: &Widget<M, App>,
-    layout: &LayoutEngine<M, App>,
+    ui: &Widget<M>,
+    render_state: &RenderState,
+    layout: &LayoutEngine<M>,
     pos: &PhysicalPosition<f64>,
     user_struct: &mut App,
     user_update: &fn(&mut App, M, &mut UserWindow),
@@ -272,7 +213,15 @@ fn check_click<M: Clone, App>(
         {
             // Go to every child in vstack/hstack childrens
             for child in children {
-                check_click(window, child, layout, pos, user_struct, user_update);
+                check_click(
+                    window,
+                    child,
+                    render_state,
+                    layout,
+                    pos,
+                    user_struct,
+                    user_update,
+                );
             }
         } else if let WidgetElement::Container { child, .. } = &ui.element {
             // Get widget information (position, width and height)
@@ -285,9 +234,30 @@ fn check_click<M: Clone, App>(
                     // Call update fn
                     user_update(user_struct, callback.clone(), window);
                     // Redraw the window
-                    window.request_redraw();
+                    let window = match render_state {
+                        RenderState::Active { window, renderer } => {
+                            if renderer.is_active() {
+                                Some(window)
+                            } else {
+                                None
+                            }
+                        }
+                        RenderState::Suspended(_) => None,
+                    };
+
+                    if let Some(window) = window {
+                        window.request_redraw();
+                    }
                 } else {
-                    check_click(window, child, layout, pos, user_struct, user_update);
+                    check_click(
+                        window,
+                        child,
+                        render_state,
+                        layout,
+                        pos,
+                        user_struct,
+                        user_update,
+                    );
                 }
             }
         }
@@ -303,13 +273,4 @@ fn check_click_inside(layout: &LayoutNode, click: PhysicalPosition<f64>) -> bool
         return true;
     }
     false
-}
-
-// Helper function that creates a vello `Renderer` for a given `RenderContext` and `RenderSurface`
-fn create_vello_renderer(render_cx: &RenderContext, surface: &RenderSurface<'_>) -> VelloRenderer {
-    VelloRenderer::new(
-        &render_cx.devices[surface.dev_id].device,
-        RendererOptions::default(),
-    )
-    .expect("Couldn't create renderer")
 }

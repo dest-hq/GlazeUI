@@ -1057,18 +1057,17 @@ dependencies = [
 name = "glazeui"
 version = "0.1.1"
 dependencies = [
- "bytemuck",
  "glazeui_core",
  "glazeui_layout",
  "glazeui_render",
- "glazeui_vello",
  "glazeui_winit",
- "image",
+ "multirender",
+ "multirender_skia",
+ "multirender_vello",
+ "multirender_vello_cpu",
+ "multirender_vello_hybrid",
  "parley",
  "pollster",
- "skrifa 0.40.0",
- "vello",
- "wgpu",
  "winit",
 ]
 
@@ -1077,7 +1076,7 @@ name = "glazeui_core"
 version = "0.1.1"
 dependencies = [
  "image",
- "vello",
+ "peniko",
  "winit",
 ]
 
@@ -1088,7 +1087,6 @@ dependencies = [
  "glazeui_core",
  "image",
  "parley",
- "vello",
 ]
 
 [[package]]
@@ -1109,27 +1107,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "glazeui_vello"
-version = "0.1.1"
-dependencies = [
- "bytemuck",
- "glazeui_core",
- "glazeui_layout",
- "parley",
- "skrifa 0.40.0",
- "vello",
-]
-
-[[package]]
 name = "glazeui_winit"
 version = "0.1.1"
 dependencies = [
  "glazeui_core",
  "glazeui_layout",
- "glazeui_vello",
+ "glazeui_render",
+ "multirender",
+ "multirender_skia",
+ "multirender_vello",
+ "multirender_vello_cpu",
+ "multirender_vello_hybrid",
  "parley",
  "pollster",
- "vello",
  "winit",
 ]
 

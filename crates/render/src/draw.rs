@@ -2,6 +2,7 @@ use glazeui_core::{Widget, WidgetElement};
 use glazeui_layout::LayoutEngine;
 use multirender::PaintScene;
 use parley::{FontContext, LayoutContext};
+use peniko::color::AlphaColor;
 
 use crate::widgets::{draw_image::draw_image, draw_rect::draw_rectangle, draw_text::draw_text};
 
@@ -44,7 +45,12 @@ pub fn draw<M: Clone, T: PaintScene>(
 
     // Check if widget is image
     if let WidgetElement::Image { image, .. } = &widget.element {
-        draw_image(scene, image, widget_layout.x as f64, widget_layout.y as f64);
+        draw_image(
+            scene,
+            image.as_ref(),
+            widget_layout.x as f64,
+            widget_layout.y as f64,
+        );
     }
 
     // Check if widget is container
@@ -54,8 +60,6 @@ pub fn draw<M: Clone, T: PaintScene>(
         radius,
     } = &widget.element
     {
-        let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
-
         let width = widget.style.width as f64;
         let height = widget.style.height as f64;
 

@@ -9,23 +9,26 @@ keywords.workspace = true
 description.workspace = true
 
 [features]
-default = ["skia", "cpu"]
 skia = [
   "dep:multirender_skia",
+  "glazeui_core/skia",
 ]
 cpu = [
   "dep:multirender_vello_cpu",
+  "glazeui_core/cpu",
 ]
 vello = [
   "dep:multirender_vello",
+  "glazeui_core/vello",
 ]
 hybrid = [
-  "dep:multirender_vello_hybrid"
+  "dep:multirender_vello_hybrid",
+  "glazeui_core/hybrid",
 ]
 all = ["skia", "cpu", "vello", "hybrid"]
 
 [dependencies]
-multirender = {version = "0.1.0"}
+multirender.workspace = true
 multirender_skia = {version = "0.1.0", optional = true}
 multirender_vello = {version = "0.1.0", optional = true}
 multirender_vello_cpu = { version = "0.1.0", features = [

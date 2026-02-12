@@ -21,8 +21,8 @@ pub use color::*;
 pub use helpers::*;
 pub use margin::*;
 pub use padding::*;
+use peniko::ImageBrush;
 pub use text_style::*;
-use vello::peniko::ImageBrush;
 pub use weight::*;
 
 /// Widget with a generic Message type

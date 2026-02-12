@@ -47,7 +47,7 @@ impl ModifyWindow {
         }
     }
 
-    fn view(&mut self) -> Widget<Message, ModifyWindow> {
+    fn view(&mut self) -> Widget<Message> {
         let close = button("Close")
             .label_size(25)
             .width(340)

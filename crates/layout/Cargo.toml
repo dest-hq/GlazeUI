@@ -11,5 +11,4 @@ description.workspace = true
 [dependencies]
 glazeui_core.workspace = true
 parley.workspace = true
-vello.workspace = true
 image.workspace = true

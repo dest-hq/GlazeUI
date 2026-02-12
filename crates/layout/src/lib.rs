@@ -16,19 +16,17 @@ pub struct LayoutNode {
     pub parent_height: f32,
 }
 
-pub struct LayoutEngine<M: Clone, App> {
+pub struct LayoutEngine<M: Clone> {
     nodes: HashMap<u64, LayoutNode>,
-    _marker_app: PhantomData<App>,
-    _marker_message: PhantomData<M>,
+    _marker: PhantomData<M>,
 }
 
-impl<M: Clone, App> LayoutEngine<M, App> {
+impl<M: Clone> LayoutEngine<M> {
     /// Initialize the layout engine
     pub fn new() -> Self {
         Self {
             nodes: HashMap::new(),
-            _marker_app: PhantomData,
-            _marker_message: PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -40,7 +38,7 @@ impl<M: Clone, App> LayoutEngine<M, App> {
     /// Compute layout
     pub fn compute(
         &mut self,
-        root: &Widget<M, App>,
+        root: &Widget<M>,
         width: f32,
         height: f32,
         font_cx: &mut FontContext,
@@ -53,7 +51,7 @@ impl<M: Clone, App> LayoutEngine<M, App> {
     /// Resolve layout for a node and its children
     pub fn resolve_node(
         &mut self,
-        widget: &Widget<M, App>,
+        widget: &Widget<M>,
         parent_x: f32,
         parent_y: f32,
         available_width: f32,
@@ -220,7 +218,7 @@ impl<M: Clone, App> LayoutEngine<M, App> {
         &mut self,
         widget_id: u64,
         style: &Style,
-        children: &Vec<Widget<M, App>>,
+        children: &Vec<Widget<M>>,
         parent_x: f32,
         parent_y: f32,
         available_height: f32,
@@ -291,7 +289,7 @@ impl<M: Clone, App> LayoutEngine<M, App> {
         &mut self,
         widget_id: u64,
         style: &Style,
-        children: &Vec<Widget<M, App>>,
+        children: &Vec<Widget<M>>,
         parent_x: f32,
         parent_y: f32,
         available_height: f32,

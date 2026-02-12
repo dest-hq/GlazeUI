@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::{marker::PhantomData, path::Path};
 
 use image::imageops::FilterType;
-use vello::peniko::{Blob, ImageBrush, ImageData, ImageFormat};
+use peniko::{Blob, ImageBrush, ImageData, ImageFormat};
 
 use crate::id::next_id;
 use crate::style::Style;
@@ -61,7 +61,7 @@ impl<M: Clone> ImageWidget<M> {
             format: ImageFormat::Rgba8,
             width: target_width,
             height: target_height,
-            alpha_type: vello::peniko::ImageAlphaType::Alpha,
+            alpha_type: peniko::ImageAlphaType::Alpha,
         })
     }
 

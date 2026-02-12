@@ -1,10 +1,15 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum Backend {
-    /// Vulkan, Metal, DX12 or Browser WebGPU Renderer
-    Auto,
-    Vulkan,
-    Metal,
-    DX12,
-    /// OpenGL Renderer
-    OpenGL,
+    // OpenGL for Windows, Linux; Metal for MacOS
+    #[cfg(feature = "skia")]
+    Skia,
+    // CPU Render
+    #[cfg(feature = "cpu")]
+    CPU,
+    // Vulkan, Metal, DX12
+    #[cfg(feature = "vello")]
+    Vello,
+    // Vello + CPU
+    #[cfg(feature = "hybrid")]
+    Hybrid,
 }

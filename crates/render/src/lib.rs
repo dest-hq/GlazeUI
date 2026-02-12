@@ -3,8 +3,12 @@ use std::sync::Arc;
 use multirender::{NullWindowRenderer, WindowRenderer};
 #[cfg(feature = "skia")]
 use multirender_skia::SkiaWindowRenderer;
+#[cfg(feature = "vello")]
+use multirender_vello::VelloWindowRenderer;
 #[cfg(feature = "cpu")]
 use multirender_vello_cpu::VelloCpuImageRenderer;
+#[cfg(feature = "hybrid")]
+use multirender_vello_hybrid::VelloHybridWindowRenderer;
 use winit::window::Window;
 
 pub mod draw;
@@ -12,7 +16,7 @@ pub mod widgets;
 
 pub enum Renderer {
     #[cfg(feature = "vello")]
-    Gpu(Box<multirender_vello::VelloWindowRenderer>),
+    Gpu(Box<VelloWindowRenderer>),
     #[cfg(feature = "hybrid")]
     Hybrid(Box<VelloHybridWindowRenderer>),
     #[cfg(feature = "cpu")]
@@ -60,8 +64,10 @@ impl Renderer {
             Renderer::Gpu(r) => r.is_active(),
             #[cfg(feature = "hybrid")]
             Renderer::Hybrid(r) => r.is_active(),
+            #[cfg(feature = "cpu")]
             Renderer::CpuSoftbuffer(r) => r.is_active(),
             Renderer::Null(r) => r.is_active(),
+            #[cfg(feature = "skia")]
             Renderer::Skia(r) => r.is_active(),
         }
     }
@@ -72,8 +78,10 @@ impl Renderer {
             Renderer::Gpu(r) => r.set_size(w, h),
             #[cfg(feature = "hybrid")]
             Renderer::Hybrid(r) => r.set_size(w, h),
+            #[cfg(feature = "cpu")]
             Renderer::CpuSoftbuffer(r) => r.set_size(w, h),
             Renderer::Null(r) => r.set_size(w, h),
+            #[cfg(feature = "skia")]
             Renderer::Skia(r) => r.set_size(w, h),
         }
     }
