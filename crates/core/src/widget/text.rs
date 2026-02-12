@@ -4,7 +4,7 @@ use crate::{
     Margin, TextStyle, Widget, color::Color, id::next_id, style::Style, weight::TextWeight,
 };
 
-pub struct Text<M: Clone, App> {
+pub struct Text<M: Clone> {
     pub content: String,
     pub font_size: u32,
     pub weight: TextWeight,
@@ -12,11 +12,10 @@ pub struct Text<M: Clone, App> {
     pub spacing: i32,
     pub color: Color,
     pub margin: Margin,
-    _marker_app: PhantomData<App>,
-    _marker_message: PhantomData<M>,
+    _marker: PhantomData<M>,
 }
 
-impl<M: Clone, App> Text<M, App> {
+impl<M: Clone> Text<M> {
     pub fn new(content: String) -> Self {
         Self {
             content: content,
@@ -26,8 +25,7 @@ impl<M: Clone, App> Text<M, App> {
             spacing: 0,
             color: Color::rgb(255, 255, 255),
             margin: Margin::new(),
-            _marker_app: PhantomData,
-            _marker_message: PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -62,7 +60,7 @@ impl<M: Clone, App> Text<M, App> {
         self
     }
 
-    pub fn build(self) -> Widget<M, App> {
+    pub fn build(self) -> Widget<M> {
         let (r, g, b, a) = (self.color.r, self.color.g, self.color.b, self.color.a);
 
         // Text style
@@ -83,7 +81,6 @@ impl<M: Clone, App> Text<M, App> {
             },
             on_press: None,
             style: text_style,
-            _marker: PhantomData,
         }
     }
 }

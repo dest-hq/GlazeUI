@@ -1,5 +1,5 @@
 [package]
-name = "glazeui_winit"
+name = "glazeui_render"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,32 +12,22 @@ description.workspace = true
 skia = [
   "dep:multirender_skia",
   "glazeui_core/skia",
-  "glazeui_render/skia",
 ]
 cpu = [
   "dep:multirender_vello_cpu",
   "glazeui_core/cpu",
-  "glazeui_render/cpu",
 ]
 vello = [
   "dep:multirender_vello",
   "glazeui_core/vello",
-  "glazeui_render/vello",
 ]
 hybrid = [
   "dep:multirender_vello_hybrid",
   "glazeui_core/hybrid",
-  "glazeui_render/hybrid",
 ]
 all = ["skia", "cpu", "vello", "hybrid"]
 
 [dependencies]
-winit.workspace = true
-glazeui_core.workspace = true
-parley.workspace = true
-glazeui_layout.workspace = true
-pollster.workspace = true
-glazeui_render.workspace = true
 multirender.workspace = true
 multirender_skia = {version = "0.1.0", optional = true}
 multirender_vello = {version = "0.1.0", optional = true}
@@ -45,3 +35,10 @@ multirender_vello_cpu = { version = "0.1.0", features = [
   "softbuffer_window_renderer",
 ], optional = true}
 multirender_vello_hybrid = {version = "0.1.0", optional = true}
+
+winit.workspace = true
+peniko.workspace = true
+parley.workspace = true
+kurbo.workspace = true
+glazeui_core.workspace = true
+glazeui_layout.workspace = true

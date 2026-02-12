@@ -1,21 +1,18 @@
 use glazeui_core::{Widget, WidgetElement};
 use glazeui_layout::LayoutEngine;
+use multirender::PaintScene;
 use parley::{FontContext, LayoutContext};
-use vello::{Scene, peniko::color::AlphaColor};
+use peniko::color::AlphaColor;
 
-use crate::widgets::{
-    draw_image::draw_image, draw_rectangle::draw_rectangle, draw_text::draw_text,
-};
+use crate::widgets::{draw_image::draw_image, draw_rect::draw_rectangle, draw_text::draw_text};
 
-pub mod widgets;
-
-pub fn draw<M: Clone, App>(
-    scene: &mut Scene,
+pub fn draw<M: Clone, T: PaintScene>(
+    scene: &mut T,
     font_context: &mut FontContext,
     layout_context: &mut LayoutContext,
-    layout_engine: &mut LayoutEngine<M, App>,
+    layout_engine: &mut LayoutEngine<M>,
     scale: f32,
-    widget: &Widget<M, App>,
+    widget: &Widget<M>,
 ) {
     let widget_layout = layout_engine.get(widget.id).unwrap();
 
@@ -48,7 +45,12 @@ pub fn draw<M: Clone, App>(
 
     // Check if widget is image
     if let WidgetElement::Image { image, .. } = &widget.element {
-        draw_image(scene, image, widget_layout.x as f64, widget_layout.y as f64);
+        draw_image(
+            scene,
+            image.as_ref(),
+            widget_layout.x as f64,
+            widget_layout.y as f64,
+        );
     }
 
     // Check if widget is container
@@ -58,8 +60,6 @@ pub fn draw<M: Clone, App>(
         radius,
     } = &widget.element
     {
-        let color = AlphaColor::from_rgba8(color.0, color.1, color.2, color.3);
-
         let width = widget.style.width as f64;
         let height = widget.style.height as f64;
 

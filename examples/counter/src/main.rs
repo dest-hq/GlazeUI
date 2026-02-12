@@ -34,7 +34,7 @@ impl Count {
         }
     }
 
-    fn view(&mut self) -> Widget<Message, Count> {
+    fn view(&mut self) -> Widget<Message> {
         let increment = button(&self.count.to_string())
             .radius(360)
             .width(75)

@@ -25,7 +25,7 @@ enum Message {}
 
 impl HelloWorld {
     fn update(&mut self, _: Message, _: &mut Window) {}
-    fn view(&mut self) -> Widget<Message, HelloWorld> {
+    fn view(&mut self) -> Widget<Message> {
         let hello_world_text = text(&self.text)
             .size(36) // Set text size to 36 pixels
             .build(); // Turn text element into Widget

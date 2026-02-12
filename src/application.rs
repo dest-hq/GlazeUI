@@ -4,18 +4,18 @@ use crate::core::{
 };
 use crate::shell::{Application, Program, Renderer};
 use glazeui_core::window::Window;
+use glazeui_layout::LayoutEngine;
 use parley::{FontContext, LayoutContext};
-use vello::{Scene, util::RenderContext};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize, Size},
-    event_loop::{ControlFlow, EventLoop},
+    event_loop::EventLoop,
     window::{Theme as WinitTheme, WindowAttributes, WindowLevel as WinitWindowLevel},
 };
 
 // Helper to start app
 pub fn start<M: Clone, App>(
     app: App,
-    view_fn: fn(&mut App) -> Widget<M, App>,
+    view_fn: fn(&mut App) -> Widget<M>,
     update_fn: fn(&mut App, M, &mut Window),
 ) -> Run<M, App> {
     Run::new(app, view_fn, update_fn)
@@ -24,38 +24,72 @@ pub fn start<M: Clone, App>(
 struct WindowSettings {
     attributes: WindowAttributes,
     background: Color,
-    vsync: bool,
 }
 
 pub struct Run<M: Clone, App: 'static> {
     user_struct: App,
     window_settings: WindowSettings,
-    view_fn: fn(&mut App) -> Widget<M, App>,
+    view_fn: fn(&mut App) -> Widget<M>,
     update_fn: fn(&mut App, M, &mut Window),
     backend: Backend,
+    fallback_backend: Backend,
+}
+
+#[allow(unused)]
+fn get_backend() -> Backend {
+    #[cfg(feature = "skia")]
+    return Backend::Skia;
+    #[cfg(feature = "vello")]
+    return Backend::Vello;
+    #[cfg(feature = "hybrid")]
+    return Backend::Hybrid;
+    #[cfg(feature = "cpu")]
+    return Backend::CPU;
+}
+
+#[allow(unused)]
+fn get_fallback_backend() -> Backend {
+    #[cfg(feature = "cpu")]
+    return Backend::CPU;
+    #[cfg(feature = "skia")]
+    return Backend::Skia;
+    #[cfg(feature = "vello")]
+    return Backend::Vello;
+    #[cfg(feature = "hybrid")]
+    return Backend::Hybrid;
 }
 
 impl<M: Clone, App: 'static> Run<M, App> {
     pub fn new(
         user_struct: App,
-        view_fn: fn(&mut App) -> Widget<M, App>,
+        view_fn: fn(&mut App) -> Widget<M>,
         update_fn: fn(&mut App, M, &mut Window),
     ) -> Self {
         Self {
             user_struct: user_struct,
             window_settings: WindowSettings {
-                attributes: WindowAttributes::default().with_title("GlazeUI"),
+                attributes: WindowAttributes::default()
+                    .with_inner_size(Size::Physical(PhysicalSize {
+                        width: 800,
+                        height: 600,
+                    }))
+                    .with_title("GlazeUI"),
                 background: Color::rgb(0, 0, 0),
-                vsync: true,
             },
             view_fn: view_fn,
             update_fn: update_fn,
-            backend: Backend::Auto,
+            backend: get_backend(),
+            fallback_backend: get_fallback_backend(),
         }
     }
 
     pub fn backend(mut self, backend: Backend) -> Self {
         self.backend = backend;
+        self
+    }
+
+    pub fn fallback(mut self, fallback: Backend) -> Self {
+        self.fallback_backend = fallback;
         self
     }
 
@@ -138,11 +172,6 @@ impl<M: Clone, App: 'static> Run<M, App> {
         self
     }
 
-    pub fn vsync(mut self, vsync: bool) -> Self {
-        self.window_settings.vsync = vsync;
-        self
-    }
-
     // The theme of titlebar
     pub fn theme(mut self, theme: Theme) -> Self {
         let theme = match theme {
@@ -157,134 +186,38 @@ impl<M: Clone, App: 'static> Run<M, App> {
     pub fn run(self) -> crate::Result {
         let event_loop = EventLoop::new().unwrap();
 
-        match self.window_settings.vsync {
-            true => event_loop.set_control_flow(ControlFlow::Wait),
-            false => event_loop.set_control_flow(ControlFlow::Poll),
+        let size = self
+            .window_settings
+            .attributes
+            .inner_size
+            .unwrap()
+            .to_physical(1.0);
+
+        let mut program = Program::<M, App> {
+            window: None,
+            width: size.width,
+            height: size.height,
+            window_attributes: self.window_settings.attributes,
+            renderer: Renderer {
+                render_state: glazeui_render::RenderState::Suspended(None),
+                backend: self.backend,
+                fallback_backend: self.fallback_backend,
+                font_context: FontContext::new(),
+                layout_context: LayoutContext::new(),
+                layout: LayoutEngine::new(),
+            },
+            application: Application {
+                user_struct: self.user_struct,
+                view_fn: self.view_fn,
+                update_fn: self.update_fn,
+                background: self.window_settings.background,
+                position: PhysicalPosition::new(0.0, 0.0),
+            },
         };
 
-        let mut context = RenderContext::new();
-        let backends = match self.backend {
-            Backend::Auto => wgpu::Backends::PRIMARY,
-            Backend::Vulkan => wgpu::Backends::VULKAN,
-            Backend::DX12 => wgpu::Backends::DX12,
-            Backend::Metal => wgpu::Backends::METAL,
-            Backend::OpenGL => wgpu::Backends::GL,
-        };
-
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends,
-            ..Default::default()
-        });
-        context.instance = instance;
-
-        #[cfg(target_arch = "wasm32")]
-        {
-            use std::sync::Arc;
-            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init().expect("could not initialize logger");
-            use winit::platform::web::WindowExtWebSys;
-
-            #[allow(deprecated)]
-            let window = Arc::new(
-                event_loop
-                    .create_window(WindowAttributes::default())
-                    .unwrap(),
-            );
-
-            // append canvas
-            let canvas = window.canvas().unwrap();
-            web_sys::window()
-                .and_then(|win| win.document())
-                .and_then(|doc| doc.body())
-                .and_then(|body| body.append_child(canvas.as_ref()).ok())
-                .expect("couldn't append canvas to document body");
-            drop(web_sys::HtmlElement::from(canvas).focus());
-
-            wasm_bindgen_futures::spawn_local(async move {
-                let (width, height, scale_factor) = web_sys::window()
-                    .map(|w| {
-                        (
-                            w.inner_width().unwrap().as_f64().unwrap(),
-                            w.inner_height().unwrap().as_f64().unwrap(),
-                            w.device_pixel_ratio(),
-                        )
-                    })
-                    .unwrap();
-
-                let size =
-                    winit::dpi::PhysicalSize::from_logical::<_, f64>((width, height), scale_factor);
-                _ = window.request_inner_size(size);
-
-                let mode = if self.window_settings.vsync {
-                    wgpu::PresentMode::AutoVsync
-                } else {
-                    wgpu::PresentMode::AutoNoVsync
-                };
-
-                let surface = context
-                    .create_surface(window.clone(), size.width, size.height, mode)
-                    .await;
-
-                if let Ok(surface) = surface {
-                    let mut program = Program::<App> {
-                        window: Some(window),
-                        window_attributes: WindowAttributes::default(),
-                        renderer: Renderer {
-                            context,
-                            scene: Scene::new(),
-                            surface: Some(surface),
-                            renderers: vec![],
-                            backend: Some(self.backend),
-                            font_context: Some(FontContext::new()),
-                            layout_context: Some(LayoutContext::new()),
-                            layout: None,
-                            vsync: self.window_settings.vsync,
-                        },
-                        application: Application {
-                            user_struct: self.user_struct,
-                            view_fn: Some(self.view_fn),
-                            background: self.window_settings.background,
-                            position: PhysicalPosition::new(0.0, 0.0),
-                        },
-                    };
-
-                    if let Err(e) = event_loop.run_app(&mut program) {
-                        web_sys::console::error_1(&format!("run_app failed: {:?}", e).into());
-                    }
-                }
-            });
-            return Ok(());
-        }
-
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let mut program = Program::<M, App> {
-                window: None,
-                window_attributes: self.window_settings.attributes,
-                renderer: Renderer {
-                    context,
-                    scene: Scene::new(),
-                    surface: None,
-                    renderers: vec![],
-                    backend: Some(self.backend),
-                    font_context: Some(FontContext::new()),
-                    layout_context: Some(LayoutContext::new()),
-                    layout: None,
-                    vsync: self.window_settings.vsync,
-                },
-                application: Application {
-                    user_struct: self.user_struct,
-                    view_fn: self.view_fn,
-                    update_fn: self.update_fn,
-                    background: self.window_settings.background,
-                    position: PhysicalPosition::new(0.0, 0.0),
-                },
-            };
-
-            match event_loop.run_app(&mut program) {
-                Ok(()) => return Ok(()),
-                Err(e) => return Err(e),
-            }
+        match event_loop.run_app(&mut program) {
+            Ok(()) => return Ok(()),
+            Err(e) => return Err(e),
         }
     }
 }

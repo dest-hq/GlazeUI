@@ -1,16 +1,14 @@
 use glazeui_core::{TextStyle, TextWeight};
+use kurbo::{Affine, Line, Stroke, Vec2};
+use multirender::{Glyph, PaintScene};
 use parley::{
     FontContext, FontWeight, GenericFamily, Layout, LayoutContext, LineHeight,
     PositionedLayoutItem, StyleProperty,
 };
-use vello::{
-    Glyph, Scene,
-    kurbo::{Affine, Line, Stroke, Vec2},
-    peniko::{Color, Fill},
-};
+use peniko::{Color, Fill};
 
-pub fn draw_text(
-    scene: &mut Scene,
+pub fn draw_text<T: PaintScene>(
+    scene: &mut T,
     x: f64,
     y: f64,
     font_cx: &mut FontContext,
@@ -119,8 +117,6 @@ pub fn draw_text(
 
                 scene.stroke(&Stroke::new(width.into()), transform, color, None, &line);
             }
-            let mut x = glyph_run.offset();
-            let y = glyph_run.baseline();
             let run = glyph_run.run();
             let font = run.font();
             let font_size = run.font_size();
@@ -136,27 +132,26 @@ pub fn draw_text(
                 style.brush[3],
             );
 
-            scene
-                .draw_glyphs(font)
-                .brush(&color)
-                .hint(true)
-                .transform(transform)
-                .glyph_transform(glyph_xform)
-                .font_size(font_size)
-                .normalized_coords(run.normalized_coords())
-                .draw(
-                    Fill::NonZero,
-                    glyph_run.glyphs().map(|glyph| {
-                        let gx = x + glyph.x;
-                        let gy = y - glyph.y;
-                        x += glyph.advance;
-                        Glyph {
-                            id: glyph.id,
-                            x: gx,
-                            y: gy,
-                        }
-                    }),
-                );
+            let glyphs = glyph_run.positioned_glyphs().map(|g| Glyph {
+                id: g.id,
+                x: g.x,
+                y: g.y,
+            });
+
+            // Draw text
+            scene.draw_glyphs(
+                font,
+                font_size,
+                true,
+                run.normalized_coords(),
+                Fill::NonZero,
+                color,
+                *color.components.last().unwrap_or(&1.0),
+                transform,
+                glyph_xform,
+                glyphs.into_iter(),
+            );
+
             if let Some(strikestrough) = &style.strikethrough {
                 let strikethrough_brush = &style.brush;
                 let run_metrics = glyph_run.run().metrics();

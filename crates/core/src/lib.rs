@@ -1,5 +1,4 @@
 use std::fmt;
-use std::marker::PhantomData;
 
 use crate::id::next_id;
 use crate::style::Style;
@@ -22,29 +21,27 @@ pub use color::*;
 pub use helpers::*;
 pub use margin::*;
 pub use padding::*;
+use peniko::ImageBrush;
 pub use text_style::*;
-use vello::peniko::ImageBrush;
 pub use weight::*;
 
 /// Widget with a generic Message type
-pub struct Widget<M: Clone, App: 'static> {
+pub struct Widget<M: Clone> {
     /// Unique Id
     pub id: u64,
 
     /// Type of UI element
     /// ['WidgetElement']
-    pub element: WidgetElement<M, App>,
+    pub element: WidgetElement<M>,
 
     /// Callback triggered when the widget is pressed
     pub on_press: Option<M>,
 
     /// Style of element for layout engine
     pub style: Style,
-
-    _marker: PhantomData<App>,
 }
 
-impl<M: Clone, App> fmt::Debug for Widget<M, App> {
+impl<M: Clone> fmt::Debug for Widget<M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Widget")
             .field("id", &self.id)
@@ -53,23 +50,22 @@ impl<M: Clone, App> fmt::Debug for Widget<M, App> {
     }
 }
 
-impl<M: Clone, App> Clone for Widget<M, App> {
+impl<M: Clone> Clone for Widget<M> {
     fn clone(&self) -> Self {
         Self {
             id: next_id(),
             element: self.element.clone(),
             on_press: self.on_press.clone(),
             style: self.style.clone(),
-            _marker: PhantomData,
         }
     }
 }
 
 /// Types of UI elements
-pub enum WidgetElement<M: Clone, App: 'static> {
+pub enum WidgetElement<M: Clone> {
     /// A Rectangle that holds a child
     Container {
-        child: Box<Widget<M, App>>,
+        child: Box<Widget<M>>,
         color: (u8, u8, u8, u8),
         radius: u32,
     },
@@ -88,12 +84,12 @@ pub enum WidgetElement<M: Clone, App: 'static> {
 
     /// Vertical list
     VStack {
-        children: Vec<Widget<M, App>>,
+        children: Vec<Widget<M>>,
     },
 
     /// Horizontal list
     HStack {
-        children: Vec<Widget<M, App>>,
+        children: Vec<Widget<M>>,
     },
 
     /// Empty space
@@ -101,7 +97,7 @@ pub enum WidgetElement<M: Clone, App: 'static> {
 }
 
 // Debug for WidgetElement
-impl<M: Clone, App> fmt::Debug for WidgetElement<M, App> {
+impl<M: Clone> fmt::Debug for WidgetElement<M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WidgetElement::Container {
@@ -144,7 +140,7 @@ impl<M: Clone, App> fmt::Debug for WidgetElement<M, App> {
     }
 }
 
-impl<M: Clone, App> Clone for WidgetElement<M, App> {
+impl<M: Clone> Clone for WidgetElement<M> {
     fn clone(&self) -> Self {
         match self {
             WidgetElement::Image { image } => WidgetElement::Image {
