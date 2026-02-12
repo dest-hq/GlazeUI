@@ -32,7 +32,7 @@ impl<M: Clone, App> ApplicationHandler for Program<M, App> {
             #[cfg(feature = "skia")]
             glazeui_core::Backend::Skia => Renderer::from(SkiaWindowRenderer::new()),
             #[cfg(feature = "cpu")]
-            glazeui_core::Backend::CPU => Renderer::from(SoftbufferWindowRenderer::new()),
+            glazeui_core::Backend::Cpu => Renderer::from(SoftbufferWindowRenderer::new()),
             #[cfg(feature = "hybrid")]
             glazeui_core::Backend::Hybrid => Renderer::from(VelloHybridWindowRenderer::new()),
             #[cfg(feature = "vello")]

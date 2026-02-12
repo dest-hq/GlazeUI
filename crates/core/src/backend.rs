@@ -5,7 +5,7 @@ pub enum Backend {
     Skia,
     // CPU Render
     #[cfg(feature = "cpu")]
-    CPU,
+    Cpu,
     // Vulkan, Metal, DX12
     #[cfg(feature = "vello")]
     Vello,

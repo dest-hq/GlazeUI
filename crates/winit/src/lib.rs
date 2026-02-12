@@ -137,7 +137,7 @@ impl<M: Clone, App: 'static> Program<M, App> {
                 #[cfg(feature = "skia")]
                 Backend::Skia => GlazeuiRenderer::Skia(Box::new(SkiaWindowRenderer::new())),
                 #[cfg(feature = "cpu")]
-                Backend::CPU => {
+                Backend::Cpu => {
                     GlazeuiRenderer::CpuSoftbuffer(Box::new(SoftbufferWindowRenderer::new()))
                 }
                 #[cfg(feature = "vello")]

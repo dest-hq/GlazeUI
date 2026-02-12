@@ -5,6 +5,7 @@ use crate::core::{
 use crate::shell::{Application, Program, Renderer};
 use glazeui_core::window::Window;
 use glazeui_layout::LayoutEngine;
+use glazeui_render::RenderState;
 use parley::{FontContext, LayoutContext};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize, Size},
@@ -44,13 +45,13 @@ fn get_backend() -> Backend {
     #[cfg(feature = "hybrid")]
     return Backend::Hybrid;
     #[cfg(feature = "cpu")]
-    return Backend::CPU;
+    return Backend::Cpu;
 }
 
 #[allow(unused)]
 fn get_fallback_backend() -> Backend {
     #[cfg(feature = "cpu")]
-    return Backend::CPU;
+    return Backend::Cpu;
     #[cfg(feature = "skia")]
     return Backend::Skia;
     #[cfg(feature = "vello")]
@@ -199,7 +200,7 @@ impl<M: Clone, App: 'static> Run<M, App> {
             height: size.height,
             window_attributes: self.window_settings.attributes,
             renderer: Renderer {
-                render_state: glazeui_render::RenderState::Suspended(None),
+                render_state: RenderState::Suspended(None),
                 backend: self.backend,
                 fallback_backend: self.fallback_backend,
                 font_context: FontContext::new(),
