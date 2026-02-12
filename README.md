@@ -16,7 +16,7 @@ Inspired by [Iced](https://github.com/iced-rs/iced)
 
 ## Features
 
-- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [multirender](https://github.com/dest-hq/multirender)
+- **Cross-platform**: GlazeUI supports Windows, macOS and Linux with rendering using [MultiRender](https://github.com/dest-hq/multirender)
 - Easy to use
 
 ## Quickstart
