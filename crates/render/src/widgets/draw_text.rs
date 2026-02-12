@@ -120,10 +120,6 @@ pub fn draw_text<T: PaintScene>(
             let run = glyph_run.run();
             let font = run.font();
             let font_size = run.font_size();
-            let synthesis = run.synthesis();
-            let glyph_xform = synthesis
-                .skew()
-                .map(|angle| Affine::skew(angle.to_radians().tan() as f64, 0.0));
 
             let color = Color::from_rgba8(
                 style.brush[0],
@@ -132,23 +128,31 @@ pub fn draw_text<T: PaintScene>(
                 style.brush[3],
             );
 
-            let glyphs = glyph_run.positioned_glyphs().map(|g| Glyph {
-                id: g.id,
-                x: g.x,
-                y: g.y,
+            let mut x = glyph_run.offset();
+            let y = glyph_run.baseline();
+
+            let glyphs = glyph_run.glyphs().map(|g| {
+                let gx = x + g.x;
+                let gy = y - g.y;
+                x += g.advance;
+                Glyph {
+                    id: g.id,
+                    x: gx,
+                    y: gy,
+                }
             });
 
             // Draw text
             scene.draw_glyphs(
                 font,
                 font_size,
-                true,
+                false,
                 run.normalized_coords(),
                 Fill::NonZero,
                 color,
                 *color.components.last().unwrap_or(&1.0),
                 transform,
-                glyph_xform,
+                None,
                 glyphs.into_iter(),
             );
 
