@@ -9,7 +9,7 @@ v0.1.2
 - [ ] - Custom layout engine
 
 v0.2.0
-- [ ] - Gradient support
+- [x] - Gradient support
 - [ ] - Clipping
 
 v0.2.1
