@@ -1,6 +1,6 @@
 use crate::{Margin, Padding, Widget, color::Color, id::next_id, style::Style};
 
-pub struct Container<M: Clone> {
+pub struct Container<M: Clone + Send + 'static> {
     pub child: Widget<M>,
     pub width: u32,
     pub height: u32,
@@ -11,7 +11,7 @@ pub struct Container<M: Clone> {
     pub padding: Padding,
 }
 
-impl<M: Clone> Container<M> {
+impl<M: Clone + Send + 'static> Container<M> {
     pub fn new(child: Widget<M>) -> Self {
         Self {
             child,

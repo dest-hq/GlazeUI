@@ -16,12 +16,12 @@ pub struct LayoutNode {
     pub parent_height: f32,
 }
 
-pub struct LayoutEngine<M: Clone> {
+pub struct LayoutEngine<M: Clone + Send + 'static> {
     nodes: HashMap<u64, LayoutNode>,
     _marker: PhantomData<M>,
 }
 
-impl<M: Clone> LayoutEngine<M> {
+impl<M: Clone + Send + 'static> LayoutEngine<M> {
     /// Initialize the layout engine
     pub fn new() -> Self {
         Self {

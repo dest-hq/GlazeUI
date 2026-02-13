@@ -1,3 +1,8 @@
+#[cfg(feature = "async")]
+use glazeui_core::task::Task;
+#[cfg(feature = "async")]
+use std::sync::mpsc::channel;
+
 use crate::core::{
     Backend, Color, Widget,
     window::{Theme, WindowLevel},
@@ -14,10 +19,11 @@ use winit::{
 };
 
 // Helper to start app
-pub fn start<M: Clone, App>(
+pub fn start<M: Clone + Send + 'static, App>(
     app: App,
     view_fn: fn(&mut App) -> Widget<M>,
-    update_fn: fn(&mut App, M, &mut Window),
+    #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
 ) -> Run<M, App> {
     Run::new(app, view_fn, update_fn)
 }
@@ -27,10 +33,13 @@ struct WindowSettings {
     background: Color,
 }
 
-pub struct Run<M: Clone, App: 'static> {
+pub struct Run<M: Clone + Send + 'static, App: 'static> {
     user_struct: App,
     window_settings: WindowSettings,
     view_fn: fn(&mut App) -> Widget<M>,
+    #[cfg(feature = "async")]
+    update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    #[cfg(not(feature = "async"))]
     update_fn: fn(&mut App, M, &mut Window),
     backend: Backend,
     fallback_backend: Backend,
@@ -60,11 +69,12 @@ fn get_fallback_backend() -> Backend {
     return Backend::Hybrid;
 }
 
-impl<M: Clone, App: 'static> Run<M, App> {
+impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
     pub fn new(
         user_struct: App,
         view_fn: fn(&mut App) -> Widget<M>,
-        update_fn: fn(&mut App, M, &mut Window),
+        #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+        #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
     ) -> Self {
         Self {
             user_struct: user_struct,
@@ -194,6 +204,11 @@ impl<M: Clone, App: 'static> Run<M, App> {
             .unwrap()
             .to_physical(1.0);
 
+        #[cfg(feature = "async")]
+        let (tx, rx) = channel();
+        #[cfg(feature = "async")]
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
         let mut program = Program::<M, App> {
             window: None,
             width: size.width,
@@ -213,6 +228,12 @@ impl<M: Clone, App: 'static> Run<M, App> {
                 update_fn: self.update_fn,
                 background: self.window_settings.background,
                 position: PhysicalPosition::new(0.0, 0.0),
+                #[cfg(feature = "async")]
+                runtime: runtime,
+                #[cfg(feature = "async")]
+                tx: tx,
+                #[cfg(feature = "async")]
+                rx: rx,
             },
         };
 

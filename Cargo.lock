@@ -1068,6 +1068,7 @@ dependencies = [
  "multirender_vello_hybrid",
  "parley",
  "pollster",
+ "tokio",
  "winit",
 ]
 
@@ -1120,6 +1121,7 @@ dependencies = [
  "multirender_vello_hybrid",
  "parley",
  "pollster",
+ "tokio",
  "winit",
 ]
 
@@ -3227,6 +3229,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "timer_async"
+version = "0.1.1"
+dependencies = [
+ "glazeui",
+]
+
+[[package]]
 name = "tiny-skia"
 version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3273,6 +3282,27 @@ dependencies = [
  "displaydoc",
  "serde_core",
  "zerovec",
+]
+
+[[package]]
+name = "tokio"
+version = "1.49.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72a2903cd7736441aac9df9d7688bd0ce48edccaadf181c3b90be801e81d3d86"
+dependencies = [
+ "pin-project-lite",
+ "tokio-macros",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af407857209536a95c8e56f8231ef2c2e2aff839b22e07a1ffcbc617e9db9fa5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

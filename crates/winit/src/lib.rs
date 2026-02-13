@@ -1,4 +1,11 @@
 use std::sync::Arc;
+#[cfg(feature = "async")]
+use std::sync::mpsc::Receiver;
+#[cfg(feature = "async")]
+use std::sync::mpsc::Sender;
+
+#[cfg(feature = "async")]
+use glazeui_core::task::Task;
 
 use glazeui_core::{Backend, Color, Widget, window::Window};
 use glazeui_layout::LayoutEngine;
@@ -23,15 +30,24 @@ use winit::{
 
 pub mod window;
 
-pub struct Application<M: Clone, App: 'static> {
+pub struct Application<M: Clone + Send + 'static, App: 'static> {
     pub user_struct: App,
     pub view_fn: fn(&mut App) -> Widget<M>,
+    #[cfg(feature = "async")]
+    pub update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    #[cfg(not(feature = "async"))]
     pub update_fn: fn(&mut App, M, &mut Window),
     pub background: Color,
     pub position: PhysicalPosition<f64>,
+    #[cfg(feature = "async")]
+    pub runtime: tokio::runtime::Runtime,
+    #[cfg(feature = "async")]
+    pub tx: Sender<M>,
+    #[cfg(feature = "async")]
+    pub rx: Receiver<M>,
 }
 
-pub struct Renderer<M: Clone> {
+pub struct Renderer<M: Clone + Send + 'static> {
     pub render_state: RenderState,
     pub backend: Backend,
     pub fallback_backend: Backend,
@@ -40,7 +56,7 @@ pub struct Renderer<M: Clone> {
     pub layout: LayoutEngine<M>,
 }
 
-pub struct Program<M: Clone, App: 'static> {
+pub struct Program<M: Clone + Send + 'static, App: 'static> {
     pub window: Option<Arc<WinitWindow>>,
     pub window_attributes: WindowAttributes,
     pub width: u32,
@@ -49,7 +65,7 @@ pub struct Program<M: Clone, App: 'static> {
     pub application: Application<M, App>,
 }
 
-impl<M: Clone, App: 'static> Program<M, App> {
+impl<M: Clone + Send + 'static, App: 'static> Program<M, App> {
     fn request_redraw(&mut self) {
         let window = match &self.renderer.render_state {
             RenderState::Active { window, renderer } => {

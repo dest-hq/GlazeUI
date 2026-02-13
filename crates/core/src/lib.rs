@@ -5,6 +5,7 @@ use crate::style::Style;
 mod align;
 mod backend;
 mod color;
+pub mod futures;
 mod helpers;
 pub mod id;
 mod margin;
@@ -18,6 +19,7 @@ pub mod window;
 pub use align::*;
 pub use backend::*;
 pub use color::*;
+pub use futures::*;
 pub use helpers::*;
 pub use margin::*;
 pub use padding::*;
@@ -26,7 +28,7 @@ pub use text_style::*;
 pub use weight::*;
 
 /// Widget with a generic Message type
-pub struct Widget<M: Clone> {
+pub struct Widget<M: Clone + Send + 'static> {
     /// Unique Id
     pub id: u64,
 
@@ -41,7 +43,7 @@ pub struct Widget<M: Clone> {
     pub style: Style,
 }
 
-impl<M: Clone> fmt::Debug for Widget<M> {
+impl<M: Clone + Send + 'static> fmt::Debug for Widget<M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Widget")
             .field("id", &self.id)
@@ -50,7 +52,7 @@ impl<M: Clone> fmt::Debug for Widget<M> {
     }
 }
 
-impl<M: Clone> Clone for Widget<M> {
+impl<M: Clone + Send + 'static> Clone for Widget<M> {
     fn clone(&self) -> Self {
         Self {
             id: next_id(),
@@ -62,7 +64,7 @@ impl<M: Clone> Clone for Widget<M> {
 }
 
 /// Types of UI elements
-pub enum WidgetElement<M: Clone> {
+pub enum WidgetElement<M: Clone + Send + 'static> {
     /// A Rectangle that holds a child
     Container {
         child: Box<Widget<M>>,
@@ -97,7 +99,7 @@ pub enum WidgetElement<M: Clone> {
 }
 
 // Debug for WidgetElement
-impl<M: Clone> fmt::Debug for WidgetElement<M> {
+impl<M: Clone + Send + 'static> fmt::Debug for WidgetElement<M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WidgetElement::Container {
@@ -140,7 +142,7 @@ impl<M: Clone> fmt::Debug for WidgetElement<M> {
     }
 }
 
-impl<M: Clone> Clone for WidgetElement<M> {
+impl<M: Clone + Send + 'static> Clone for WidgetElement<M> {
     fn clone(&self) -> Self {
         match self {
             WidgetElement::Image { image } => WidgetElement::Image {
