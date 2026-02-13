@@ -1,7 +1,4 @@
 #[cfg(feature = "async")]
-use std::sync::mpsc::Sender;
-
-#[cfg(feature = "async")]
 use glazeui_core::task::Task;
 
 use glazeui_core::{Widget, WidgetElement, id::clear_counter, window::Window as UserWindow};
@@ -16,6 +13,8 @@ use multirender_vello::VelloWindowRenderer;
 use multirender_vello_cpu::SoftbufferWindowRenderer;
 #[cfg(feature = "hybrid")]
 use multirender_vello_hybrid::VelloHybridWindowRenderer;
+#[cfg(feature = "async")]
+use winit::event_loop::EventLoopProxy;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalPosition,
@@ -24,9 +23,9 @@ use winit::{
     window::WindowId,
 };
 
-use crate::Program;
+use crate::{Program, event::UserEvent};
 
-impl<M: Clone + Send + 'static, App> ApplicationHandler for Program<M, App> {
+impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Program<M, App> {
     fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
         if let RenderState::Active { window, .. } = &self.renderer.render_state {
             self.renderer.render_state = RenderState::Suspended(Some(window.clone()));
@@ -48,34 +47,36 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler for Program<M, App> {
         self.set_backend(renderer, &fallback_backend, event_loop);
     }
 
-    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, _event: UserEvent<M>) {
         #[cfg(feature = "async")]
-        while let (Ok(message), Some(window)) =
-            (self.application.rx.try_recv(), self.window.as_ref())
-        {
-            // Create copy of window and give that to user, with that he can edit the window settings
-            let mut user_window = UserWindow {
-                window: window.clone(),
-                background: &mut self.application.background,
-                eventloop: _event_loop,
-            };
+        match _event {
+            UserEvent::Message(message) => {
+                if let Some(window) = self.window.as_ref() {
+                    // Create copy of window and give that to user, with that he can edit the window settings
+                    let mut user_window = UserWindow {
+                        window: window.clone(),
+                        background: &mut self.application.background,
+                        eventloop: _event_loop,
+                    };
 
-            let update_fn = self.application.update_fn;
-            update_fn(&mut self.application.user_struct, message, &mut user_window);
+                    let update_fn = self.application.update_fn;
+                    update_fn(&mut self.application.user_struct, message, &mut user_window);
 
-            let window = match &self.renderer.render_state {
-                RenderState::Active { window, renderer } => {
-                    if renderer.is_active() {
-                        Some(window)
-                    } else {
-                        None
+                    let window = match &self.renderer.render_state {
+                        RenderState::Active { window, renderer } => {
+                            if renderer.is_active() {
+                                Some(window)
+                            } else {
+                                None
+                            }
+                        }
+                        RenderState::Suspended(_) => None,
+                    };
+
+                    if let Some(window) = window {
+                        window.request_redraw();
                     }
                 }
-                RenderState::Suspended(_) => None,
-            };
-
-            if let Some(window) = window {
-                window.request_redraw();
             }
         }
     }
@@ -213,13 +214,13 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler for Program<M, App> {
                             &mut user_window,
                             &ui,
                             #[cfg(feature = "async")]
-                            self.application.tx.clone(),
-                            #[cfg(feature = "async")]
-                            &self.application.runtime,
+                            &self.runtime,
                             &self.renderer.render_state,
                             &self.renderer.layout,
                             &self.application.position,
                             &mut self.application.user_struct,
+                            #[cfg(feature = "async")]
+                            self.proxy.clone(),
                             &self.application.update_fn,
                         );
                     }
@@ -236,12 +237,12 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler for Program<M, App> {
 fn check_click<M: Clone + Send + 'static, App>(
     window: &mut UserWindow,
     ui: &Widget<M>,
-    #[cfg(feature = "async")] tx: Sender<M>,
     #[cfg(feature = "async")] runtime: &tokio::runtime::Runtime,
     render_state: &RenderState,
     layout: &LayoutEngine<M>,
     pos: &PhysicalPosition<f64>,
     user_struct: &mut App,
+    #[cfg(feature = "async")] proxy: EventLoopProxy<UserEvent<M>>,
     #[cfg(feature = "async")] user_update: &fn(&mut App, M, &mut UserWindow) -> Option<Task<M>>,
     #[cfg(not(feature = "async"))] user_update: &fn(&mut App, M, &mut UserWindow),
 ) {
@@ -262,13 +263,13 @@ fn check_click<M: Clone + Send + 'static, App>(
                     window,
                     child,
                     #[cfg(feature = "async")]
-                    tx.clone(),
-                    #[cfg(feature = "async")]
                     runtime,
                     render_state,
                     layout,
                     pos,
                     user_struct,
+                    #[cfg(feature = "async")]
+                    proxy.clone(),
                     user_update,
                 );
             }
@@ -277,13 +278,13 @@ fn check_click<M: Clone + Send + 'static, App>(
                 window,
                 child,
                 #[cfg(feature = "async")]
-                tx.clone(),
-                #[cfg(feature = "async")]
                 runtime,
                 render_state,
                 layout,
                 pos,
                 user_struct,
+                #[cfg(feature = "async")]
+                proxy.clone(),
                 user_update,
             );
 
@@ -301,7 +302,7 @@ fn check_click<M: Clone + Send + 'static, App>(
                     if let Some(task) = _task {
                         runtime.spawn(async move {
                             let message = task.future.await;
-                            tx.send(message).ok();
+                            proxy.send_event(UserEvent::Message(message)).ok();
                         });
                     }
 
@@ -331,7 +332,16 @@ fn check_click<M: Clone + Send + 'static, App>(
                 // If click was inside the widget and user provided a fn in on_press
                 if let Some(callback) = &ui.on_press {
                     // Call update fn
-                    user_update(user_struct, callback.clone(), window);
+                    let _task = user_update(user_struct, callback.clone(), window);
+
+                    #[cfg(feature = "async")]
+                    if let Some(task) = _task {
+                        runtime.spawn(async move {
+                            let message = task.future.await;
+                            proxy.send_event(UserEvent::Message(message)).ok();
+                        });
+                    }
+
                     // Redraw the window
                     let window = match render_state {
                         RenderState::Active { window, renderer } => {
