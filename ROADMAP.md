@@ -9,7 +9,7 @@ v0.1.2
 - [ ] - Custom layout engine
 
 v0.2.0
-- [x] - Gradient support
+- [ ] - Gradient support
 - [ ] - Clipping
 
 v0.2.1
@@ -24,8 +24,8 @@ v0.2.2
 
 v0.3.0
 - [ ] - Diagnostic API
-- [ ] - Animations (Limited)
-- [ ] - Async Support
+- [ ] - Animations
+- [x] - Async Support (Limited)
 
 v0.4.0
 - [ ] - Mobile support
