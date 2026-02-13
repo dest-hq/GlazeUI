@@ -1,7 +1,7 @@
 <div align="center">
   
 # GlazeUI
-[![Discord Server](https://img.shields.io/discord/1464217371584757873?label=&labelColor=6A7EC2&logo=discord&logoColor=ffffff&color=7389D8&style=flat-square)](https://discord.gg/DvS6PxAZ4p)
+[![Zulip](https://img.shields.io/badge/Dest-%23GlazeUI-blue?style=flat-square&logo=zulip)](https://dest.zulipchat.com)
 [![Crates.io](https://img.shields.io/crates/v/glazeui.svg?style=flat-square&logo=rust)](https://crates.io/crates/glazeui)
 [![Apache 2.0 or MIT license.](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue.svg?style=flat-square)]()
 
