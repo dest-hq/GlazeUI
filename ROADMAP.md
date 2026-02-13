@@ -14,8 +14,7 @@ v0.2.0
 
 v0.2.1
 - [ ] - Custom fonts
-- [x] - Font fallback
-- [ ] - Font cache API
+- [ ] - Font fallback
 
 v0.2.2
 - [ ] - API for custom widgets
@@ -25,7 +24,7 @@ v0.2.2
 v0.3.0
 - [ ] - Diagnostic API
 - [ ] - Animations
-- [x] - Async Support (Limited)
+- [x] - Async Support
 
 v0.4.0
 - [ ] - Mobile support
