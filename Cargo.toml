@@ -30,7 +30,8 @@ hybrid = [
   "glazeui_winit/hybrid",
   "glazeui_core/hybrid"
 ]
-all = ["skia", "cpu", "vello", "hybrid"]
+async = ["tokio/macros", "tokio/rt-multi-thread", "glazeui_winit/async"]
+all = ["skia", "cpu", "vello", "hybrid", "async"]
 
 [dependencies]
 winit = "0.30.12"
@@ -47,6 +48,7 @@ multirender_vello_cpu = { version = "0.1.0", features = [
   "softbuffer_window_renderer",
 ], optional = true}
 multirender_vello_hybrid = {version = "0.1.0", optional = true}
+tokio = {version = "1.49.0", features = ["rt-multi-thread", "macros"], optional = true}
 
 [workspace]
 members = ["crates/*",

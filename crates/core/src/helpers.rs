@@ -5,7 +5,7 @@ use crate::{
     },
 };
 
-pub fn text<M: Clone>(content: &str) -> Text<M> {
+pub fn text<M: Clone + Send + 'static>(content: &str) -> Text<M> {
     Text::new(content.to_string())
 }
 
@@ -25,18 +25,18 @@ macro_rules! hstack {
     }};
 }
 
-pub fn container<M: Clone>(child: Widget<M>) -> Container<M> {
+pub fn container<M: Clone + Send + 'static>(child: Widget<M>) -> Container<M> {
     Container::new(child)
 }
 
-pub fn button<M: Clone>(label: &str) -> Button<M> {
+pub fn button<M: Clone + Send + 'static>(label: &str) -> Button<M> {
     Button::new(label.to_string())
 }
 
-pub fn spacer<M: Clone>() -> Spacer<M> {
+pub fn spacer<M: Clone + Send + 'static>() -> Spacer<M> {
     Spacer::new()
 }
 
-pub fn image<M: Clone>() -> ImageWidget<M> {
+pub fn image<M: Clone + Send + 'static>() -> ImageWidget<M> {
     ImageWidget::new()
 }

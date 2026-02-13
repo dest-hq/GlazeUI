@@ -8,7 +8,7 @@ use crate::id::next_id;
 use crate::style::Style;
 use crate::{Margin, Widget};
 
-pub struct ImageWidget<M: Clone> {
+pub struct ImageWidget<M: Clone + Send + 'static> {
     pub image: Option<ImageBrush>,
     pub width: u32,
     pub height: u32,
@@ -16,7 +16,7 @@ pub struct ImageWidget<M: Clone> {
     _marker: PhantomData<M>,
 }
 
-impl<M: Clone> ImageWidget<M> {
+impl<M: Clone + Send + 'static> ImageWidget<M> {
     pub fn new() -> Self {
         Self {
             image: None,

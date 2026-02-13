@@ -1,13 +1,13 @@
 use crate::{Margin, Widget, id::next_id, style::Style};
 
 #[derive(Debug)]
-pub struct HStack<M: Clone> {
+pub struct HStack<M: Clone + Send + 'static> {
     pub children: Vec<Widget<M>>,
     pub spacing: i32,
     pub margin: Margin,
 }
 
-impl<M: Clone> HStack<M> {
+impl<M: Clone + Send + 'static> HStack<M> {
     pub fn new(children: Vec<Widget<M>>) -> Self {
         Self {
             children,

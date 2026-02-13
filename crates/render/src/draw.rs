@@ -6,7 +6,7 @@ use peniko::color::AlphaColor;
 
 use crate::widgets::{draw_image::draw_image, draw_rect::draw_rectangle, draw_text::draw_text};
 
-pub fn draw<M: Clone, T: PaintScene>(
+pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
     scene: &mut T,
     font_context: &mut FontContext,
     layout_context: &mut LayoutContext,

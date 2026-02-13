@@ -4,7 +4,7 @@ use crate::{
     Margin, TextStyle, Widget, color::Color, id::next_id, style::Style, weight::TextWeight,
 };
 
-pub struct Text<M: Clone> {
+pub struct Text<M: Clone + Send + 'static> {
     pub content: String,
     pub font_size: u32,
     pub weight: TextWeight,
@@ -16,7 +16,7 @@ pub struct Text<M: Clone> {
     _marker: PhantomData<M>,
 }
 
-impl<M: Clone> Text<M> {
+impl<M: Clone + Send + 'static> Text<M> {
     pub fn new(content: String) -> Self {
         Self {
             content: content,

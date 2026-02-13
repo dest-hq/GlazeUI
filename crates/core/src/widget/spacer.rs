@@ -2,13 +2,13 @@ use std::marker::PhantomData;
 
 use crate::{Widget, id::next_id, style::Style};
 
-pub struct Spacer<M: Clone> {
+pub struct Spacer<M: Clone + Send + 'static> {
     pub width: u32,
     pub height: u32,
     _marker: PhantomData<M>,
 }
 
-impl<M: Clone> Spacer<M> {
+impl<M: Clone + Send + 'static> Spacer<M> {
     pub fn new() -> Self {
         Self {
             width: 0,

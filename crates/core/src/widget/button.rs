@@ -3,7 +3,7 @@ use crate::{
     weight::TextWeight,
 };
 
-pub struct Button<M: Clone> {
+pub struct Button<M: Clone + Send + 'static> {
     pub label: String,
     pub label_size: u32,
     pub label_weight: TextWeight,
@@ -20,7 +20,7 @@ pub struct Button<M: Clone> {
     pub padding: Padding,
 }
 
-impl<M: Clone> Button<M> {
+impl<M: Clone + Send + 'static> Button<M> {
     pub fn new(label: String) -> Self {
         Self {
             label,
