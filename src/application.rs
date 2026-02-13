@@ -1,7 +1,6 @@
 #[cfg(feature = "async")]
 use glazeui_core::task::Task;
-#[cfg(feature = "async")]
-use std::sync::mpsc::channel;
+use glazeui_winit::event::UserEvent;
 
 use crate::core::{
     Backend, Color, Widget,
@@ -195,7 +194,11 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
 
     // Function to run the app
     pub fn run(self) -> crate::Result {
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoop::<UserEvent<M>>::with_user_event()
+            .build()
+            .unwrap();
+        #[cfg(feature = "async")]
+        let proxy = event_loop.create_proxy();
 
         let size = self
             .window_settings
@@ -205,11 +208,13 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
             .to_physical(1.0);
 
         #[cfg(feature = "async")]
-        let (tx, rx) = channel();
-        #[cfg(feature = "async")]
         let runtime = tokio::runtime::Runtime::new().unwrap();
 
         let mut program = Program::<M, App> {
+            #[cfg(feature = "async")]
+            proxy,
+            #[cfg(feature = "async")]
+            runtime,
             window: None,
             width: size.width,
             height: size.height,
@@ -228,12 +233,6 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
                 update_fn: self.update_fn,
                 background: self.window_settings.background,
                 position: PhysicalPosition::new(0.0, 0.0),
-                #[cfg(feature = "async")]
-                runtime: runtime,
-                #[cfg(feature = "async")]
-                tx: tx,
-                #[cfg(feature = "async")]
-                rx: rx,
             },
         };
 

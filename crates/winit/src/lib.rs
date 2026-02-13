@@ -1,12 +1,11 @@
-use std::sync::Arc;
-#[cfg(feature = "async")]
-use std::sync::mpsc::Receiver;
-#[cfg(feature = "async")]
-use std::sync::mpsc::Sender;
-
 #[cfg(feature = "async")]
 use glazeui_core::task::Task;
+use std::sync::Arc;
 
+pub mod event;
+
+#[cfg(feature = "async")]
+use crate::event::UserEvent;
 use glazeui_core::{Backend, Color, Widget, window::Window};
 use glazeui_layout::LayoutEngine;
 use glazeui_render::{
@@ -22,6 +21,8 @@ use multirender_vello_cpu::SoftbufferWindowRenderer;
 #[cfg(feature = "hybrid")]
 use multirender_vello_hybrid::VelloHybridWindowRenderer;
 use parley::{FontContext, LayoutContext};
+#[cfg(feature = "async")]
+use winit::event_loop::EventLoopProxy;
 use winit::{
     dpi::PhysicalPosition,
     event_loop::ActiveEventLoop,
@@ -39,12 +40,6 @@ pub struct Application<M: Clone + Send + 'static, App: 'static> {
     pub update_fn: fn(&mut App, M, &mut Window),
     pub background: Color,
     pub position: PhysicalPosition<f64>,
-    #[cfg(feature = "async")]
-    pub runtime: tokio::runtime::Runtime,
-    #[cfg(feature = "async")]
-    pub tx: Sender<M>,
-    #[cfg(feature = "async")]
-    pub rx: Receiver<M>,
 }
 
 pub struct Renderer<M: Clone + Send + 'static> {
@@ -57,6 +52,10 @@ pub struct Renderer<M: Clone + Send + 'static> {
 }
 
 pub struct Program<M: Clone + Send + 'static, App: 'static> {
+    #[cfg(feature = "async")]
+    pub proxy: EventLoopProxy<UserEvent<M>>,
+    #[cfg(feature = "async")]
+    pub runtime: tokio::runtime::Runtime,
     pub window: Option<Arc<WinitWindow>>,
     pub window_attributes: WindowAttributes,
     pub width: u32,
