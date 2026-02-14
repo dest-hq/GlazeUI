@@ -1,12 +1,13 @@
 use crate::{
     Widget,
     widget::{
-        button::Button, container::Container, image_widget::ImageWidget, spacer::Spacer, text::Text,
+        button::Button, container::Container, image_widget::ImageWidget, label::Label,
+        spacer::Spacer,
     },
 };
 
-pub fn text<M: Clone + Send + 'static>(content: &str) -> Text<M> {
-    Text::new(content.to_string())
+pub fn label<M: Clone + Send + 'static>(content: &str) -> Label<M> {
+    Label::new(content.to_string())
 }
 
 #[macro_export]

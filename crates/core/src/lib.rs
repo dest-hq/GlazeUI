@@ -72,7 +72,7 @@ pub enum WidgetElement<M: Clone + Send + 'static> {
         radius: u32,
     },
 
-    Text {
+    Label {
         content: String,
         font_size: u32,
         weight: TextWeight,
@@ -112,14 +112,14 @@ impl<M: Clone + Send + 'static> fmt::Debug for WidgetElement<M> {
                 .field("color", color)
                 .field("radius", radius)
                 .finish(),
-            WidgetElement::Text {
+            WidgetElement::Label {
                 content,
                 font_size,
                 weight,
                 style,
                 color,
             } => f
-                .debug_struct("Text")
+                .debug_struct("label")
                 .field("content", content)
                 .field("font_size", font_size)
                 .field("weight", weight)
@@ -148,13 +148,13 @@ impl<M: Clone + Send + 'static> Clone for WidgetElement<M> {
             WidgetElement::Image { image } => WidgetElement::Image {
                 image: image.clone(),
             },
-            WidgetElement::Text {
+            WidgetElement::Label {
                 content,
                 font_size,
                 weight,
                 style,
                 color,
-            } => WidgetElement::Text {
+            } => WidgetElement::Label {
                 content: content.clone(),
                 font_size: *font_size,
                 weight: weight.clone(),

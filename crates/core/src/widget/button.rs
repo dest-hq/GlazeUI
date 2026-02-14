@@ -127,7 +127,7 @@ impl<M: Clone + Send + 'static> Button<M> {
         // Create text widget
         let child = Widget::<M> {
             id: next_id(),
-            element: crate::WidgetElement::Text {
+            element: crate::WidgetElement::Label {
                 content: self.label,
                 font_size: self.label_size,
                 weight: self.label_weight,

@@ -328,7 +328,7 @@ fn check_click<M: Clone + Send + 'static, App>(
                     }
                 }
             }
-        } else if let WidgetElement::Text { .. } = ui.element {
+        } else if let WidgetElement::Label { .. } = ui.element {
             // Get widget information (position, width and height)
             let layout_resolved = layout.get(ui.id).unwrap();
             // Check if was a click inside the widget

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use glazeui::{
     application::start,
-    core::{Widget, button, task::Task, text, vstack, window::Window},
+    core::{Widget, button, label, task::Task, vstack, window::Window},
 };
 
 fn main() -> glazeui::Result {
@@ -46,7 +46,7 @@ impl Timer {
     }
 
     fn view(&mut self) -> Widget<Message> {
-        let can_start_timer = text(&format!("You can start timer?: {}", self.can_start))
+        let can_start_timer = label(&format!("You can start timer?: {}", self.can_start))
             .size(25)
             .build();
         let start_button = button("Start Timer")

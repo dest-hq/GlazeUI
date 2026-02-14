@@ -141,7 +141,7 @@ impl<M: Clone + Send + 'static> LayoutEngine<M> {
                 };
                 self.nodes.insert(widget.id, image_node);
             }
-            WidgetElement::Text {
+            WidgetElement::Label {
                 content,
                 font_size,
                 weight,

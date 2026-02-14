@@ -2,7 +2,7 @@ use std::path::Path;
 
 use glazeui::{
     application::start,
-    core::{Widget, image, text, vstack, window::Window},
+    core::{Widget, image, label, vstack, window::Window},
 };
 
 fn main() -> glazeui::Result {
@@ -25,7 +25,7 @@ impl Image {
             .join("src")
             .join("assets")
             .join("ferris.png");
-        let ferris_text = text("Ferris").size(35).build();
+        let ferris_text = label("Ferris").size(35).build();
         let image = image()
             .from_path(path, Some(300), Some(200)) // If one of size's (width, height) is set to None it will be set auto to image native size
             .unwrap()

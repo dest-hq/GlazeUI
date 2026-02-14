@@ -1,6 +1,6 @@
 use glazeui::{
     application::start,
-    core::{Widget, button, task::Task, text, vstack, window::Window},
+    core::{Widget, button, label, task::Task, vstack, window::Window},
 };
 use serde::Deserialize;
 
@@ -62,7 +62,7 @@ impl Weather {
 
     fn view(&mut self) -> Widget<Message> {
         let temperature = self.current.temperature_2m;
-        let temperature = text(&format!("{}°C", temperature)).size(25).build();
+        let temperature = label(&format!("{}°C", temperature)).size(25).build();
         let get_temperature = button("Get Temperature")
             .height(100)
             .width(300)

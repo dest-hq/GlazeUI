@@ -17,8 +17,8 @@ pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
 ) {
     let widget_layout = layout_engine.get(widget.id).unwrap();
 
-    // Check if widget is text
-    if let WidgetElement::Text {
+    // Check if widget is label
+    if let WidgetElement::Label {
         content,
         font_size,
         weight,

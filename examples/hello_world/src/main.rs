@@ -1,6 +1,6 @@
 use glazeui::{
     application::start,
-    core::{Widget, text, vstack, window::Window},
+    core::{Widget, label, vstack, window::Window},
 };
 
 fn main() -> glazeui::Result {
@@ -26,7 +26,7 @@ enum Message {}
 impl HelloWorld {
     fn update(&mut self, _: Message, _: &mut Window) {}
     fn view(&mut self) -> Widget<Message> {
-        let hello_world_text = text(&self.text)
+        let hello_world_text = label(&self.text)
             .size(36) // Set text size to 36 pixels
             .build(); // Turn text element into Widget
 
