@@ -14,7 +14,7 @@ v0.2.0
 
 v0.2.1
 - [ ] - Custom fonts
-- [ ] - Font fallback
+- [x] - Font fallback
 
 v0.2.2
 - [ ] - API for custom widgets

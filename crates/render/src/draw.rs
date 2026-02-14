@@ -9,6 +9,7 @@ use crate::widgets::{draw_image::draw_image, draw_rect::draw_rectangle, draw_tex
 pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
     scene: &mut T,
     font_context: &mut FontContext,
+    registred_fallback_font: bool,
     layout_context: &mut LayoutContext,
     layout_engine: &mut LayoutEngine<M>,
     scale: f32,
@@ -32,6 +33,7 @@ pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
             widget_layout.x as f64,
             widget_layout.y as f64,
             font_context,
+            registred_fallback_font,
             content,
             color,
             weight,
@@ -78,6 +80,7 @@ pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
         draw(
             scene,
             font_context,
+            registred_fallback_font,
             layout_context,
             layout_engine,
             scale,
@@ -91,6 +94,7 @@ pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
             draw(
                 scene,
                 font_context,
+                registred_fallback_font,
                 layout_context,
                 layout_engine,
                 scale,
@@ -105,6 +109,7 @@ pub fn draw<M: Clone + Send + 'static, T: PaintScene>(
             draw(
                 scene,
                 font_context,
+                registred_fallback_font,
                 layout_context,
                 layout_engine,
                 scale,

@@ -132,6 +132,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                         Self::draw_scene(
                             p,
                             &mut self.renderer.font_context,
+                            self.renderer.registred_fallback_font,
                             &mut self.renderer.layout_context,
                             &mut self.renderer.layout,
                             1.0,
@@ -145,6 +146,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                         Self::draw_scene(
                             p,
                             &mut self.renderer.font_context,
+                            self.renderer.registred_fallback_font,
                             &mut self.renderer.layout_context,
                             &mut self.renderer.layout,
                             1.0,
@@ -158,6 +160,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                         Self::draw_scene(
                             p,
                             &mut self.renderer.font_context,
+                            self.renderer.registred_fallback_font,
                             &mut self.renderer.layout_context,
                             &mut self.renderer.layout,
                             1.0,
@@ -171,6 +174,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                         Self::draw_scene(
                             p,
                             &mut self.renderer.font_context,
+                            self.renderer.registred_fallback_font,
                             &mut self.renderer.layout_context,
                             &mut self.renderer.layout,
                             1.0,
@@ -183,6 +187,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                         Self::draw_scene(
                             p,
                             &mut self.renderer.font_context,
+                            self.renderer.registred_fallback_font,
                             &mut self.renderer.layout_context,
                             &mut self.renderer.layout,
                             1.0,

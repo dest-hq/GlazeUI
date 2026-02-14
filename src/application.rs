@@ -10,7 +10,7 @@ use crate::shell::{Application, Program, Renderer};
 use glazeui_core::window::Window;
 use glazeui_layout::LayoutEngine;
 use glazeui_render::RenderState;
-use parley::{FontContext, LayoutContext};
+use parley::{FontContext, LayoutContext, fontique::Blob};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize, Size},
     event_loop::EventLoop,
@@ -207,6 +207,17 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
             .unwrap()
             .to_physical(1.0);
 
+        let mut font_context = FontContext::new();
+        let registred_fallback_font = if font_context.collection.family_names().next().is_none() {
+            let font_blob = Blob::from(include_bytes!("assets/fonts/Inter.ttf").to_vec());
+            font_context
+                .collection
+                .register_fonts(font_blob.clone(), None);
+            true
+        } else {
+            false
+        };
+
         #[cfg(feature = "async")]
         let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -223,7 +234,8 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
                 render_state: RenderState::Suspended(None),
                 backend: self.backend,
                 fallback_backend: self.fallback_backend,
-                font_context: FontContext::new(),
+                font_context: font_context,
+                registred_fallback_font,
                 layout_context: LayoutContext::new(),
                 layout: LayoutEngine::new(),
             },

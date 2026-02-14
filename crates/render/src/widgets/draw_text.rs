@@ -2,8 +2,8 @@ use glazeui_core::{TextStyle, TextWeight};
 use kurbo::{Affine, Line, Stroke, Vec2};
 use multirender::{Glyph, PaintScene};
 use parley::{
-    FontContext, FontWeight, GenericFamily, Layout, LayoutContext, LineHeight,
-    PositionedLayoutItem, StyleProperty,
+    FontContext, FontFamily, FontStack, FontWeight, GenericFamily, Layout, LayoutContext,
+    LineHeight, PositionedLayoutItem, StyleProperty,
 };
 use peniko::{Color, Fill};
 
@@ -12,6 +12,7 @@ pub fn draw_text<T: PaintScene>(
     x: f64,
     y: f64,
     font_cx: &mut FontContext,
+    registred_fallback_font: bool,
     text: &str,
     text_color: Color,
     text_weight: &TextWeight,
@@ -60,11 +61,11 @@ pub fn draw_text<T: PaintScene>(
     let b = (text_color.components[2] * 255.0) as u8;
     let a = (text_color.components[3] * 255.0) as u8;
 
+    // Set default font family
+    builder.push_default(GenericFamily::SystemUi);
     // Set default text colour styles
     builder.push_default(StyleProperty::Brush([r, g, b, a]));
 
-    // Set default font family
-    builder.push_default(GenericFamily::SystemUi);
     // Set font weight
     builder.push_default(StyleProperty::FontWeight(FontWeight::new(weight)));
     // Set font style (Italic, Normal)
@@ -77,6 +78,12 @@ pub fn draw_text<T: PaintScene>(
     builder.push_default(StyleProperty::Strikethrough(striketrough));
     builder.push_default(StyleProperty::Underline(underline));
     builder.push_default(StyleProperty::LetterSpacing(text_spacing as f32));
+
+    if registred_fallback_font {
+        builder.push_default(StyleProperty::FontStack(FontStack::Single(
+            FontFamily::Named("Inter".into()),
+        )));
+    }
 
     // Build the builder into a Layout
     let mut layout: Layout<[u8; 4]> = builder.build(&text);

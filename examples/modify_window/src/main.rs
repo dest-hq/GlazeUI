@@ -7,6 +7,7 @@ fn main() -> glazeui::Result {
     let init = ModifyWindow { maximized: false };
 
     start(init, ModifyWindow::view, ModifyWindow::update)
+        .backend(glazeui::core::Backend::Cpu)
         .title("Modify the window settings")
         .run()
 }

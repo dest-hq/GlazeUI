@@ -47,6 +47,7 @@ pub struct Renderer<M: Clone + Send + 'static> {
     pub backend: Backend,
     pub fallback_backend: Backend,
     pub font_context: FontContext,
+    pub registred_fallback_font: bool,
     pub layout_context: LayoutContext,
     pub layout: LayoutEngine<M>,
 }
@@ -85,6 +86,7 @@ impl<M: Clone + Send + 'static, App: 'static> Program<M, App> {
     fn draw_scene<T: PaintScene>(
         scene: &mut T,
         font_context: &mut FontContext,
+        registred_fallback_font: bool,
         layout_context: &mut LayoutContext,
         layout_engine: &mut LayoutEngine<M>,
         scale: f32,
@@ -107,6 +109,7 @@ impl<M: Clone + Send + 'static, App: 'static> Program<M, App> {
         draw(
             scene,
             font_context,
+            registred_fallback_font,
             layout_context,
             layout_engine,
             scale,
