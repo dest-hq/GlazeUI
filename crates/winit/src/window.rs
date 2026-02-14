@@ -243,7 +243,7 @@ fn check_click<M: Clone + Send + 'static, App>(
     pos: &PhysicalPosition<f64>,
     user_struct: &mut App,
     #[cfg(feature = "async")] proxy: EventLoopProxy<UserEvent<M>>,
-    #[cfg(feature = "async")] user_update: &fn(&mut App, M, &mut UserWindow) -> Option<Task<M>>,
+    #[cfg(feature = "async")] user_update: &fn(&mut App, M, &mut UserWindow) -> Task<M>,
     #[cfg(not(feature = "async"))] user_update: &fn(&mut App, M, &mut UserWindow),
 ) {
     // Get root widget info
@@ -299,9 +299,9 @@ fn check_click<M: Clone + Send + 'static, App>(
                     let _task = user_update(user_struct, callback.clone(), window);
 
                     #[cfg(feature = "async")]
-                    if let Some(task) = _task {
+                    if let Some(future) = _task.future {
                         runtime.spawn(async move {
-                            let message = task.future.await;
+                            let message = future.await;
                             proxy.send_event(UserEvent::Message(message)).ok();
                         });
                     }
@@ -335,9 +335,9 @@ fn check_click<M: Clone + Send + 'static, App>(
                     let _task = user_update(user_struct, callback.clone(), window);
 
                     #[cfg(feature = "async")]
-                    if let Some(task) = _task {
+                    if let Some(future) = _task.future {
                         runtime.spawn(async move {
-                            let message = task.future.await;
+                            let message = future.await;
                             proxy.send_event(UserEvent::Message(message)).ok();
                         });
                     }

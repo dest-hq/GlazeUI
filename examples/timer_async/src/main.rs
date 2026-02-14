@@ -27,20 +27,20 @@ async fn timer() -> Message {
 }
 
 impl Timer {
-    fn update(&mut self, message: Message, _: &mut Window) -> Option<Task<Message>> {
+    fn update(&mut self, message: Message, _: &mut Window) -> Task<Message> {
         match message {
             Message::StartedTimer => {
                 if self.can_start {
                     self.can_start = false;
-                    Some(Task::new(async { timer().await }))
+                    Task::new(async { timer().await })
                 } else {
-                    None
+                    Task::none()
                 }
             }
             Message::EndedTimer => {
                 self.can_start = true;
                 println!("Timer ended!");
-                None
+                Task::none()
             }
         }
     }

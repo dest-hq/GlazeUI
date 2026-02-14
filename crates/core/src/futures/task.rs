@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 pub struct Task<M: Clone> {
-    pub future: Pin<Box<dyn Future<Output = M> + Send>>,
+    pub future: Option<Pin<Box<dyn Future<Output = M> + Send>>>,
 }
 
 impl<M: Clone> Task<M> {
@@ -10,7 +10,11 @@ impl<M: Clone> Task<M> {
         F: Future<Output = M> + Send + 'static,
     {
         Self {
-            future: Box::pin(future),
+            future: Some(Box::pin(future)),
         }
+    }
+
+    pub fn none() -> Self {
+        Self { future: None }
     }
 }

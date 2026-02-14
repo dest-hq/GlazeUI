@@ -48,14 +48,14 @@ enum Message {
 }
 
 impl Weather {
-    fn update(&mut self, message: Message, _: &mut Window) -> Option<Task<Message>> {
+    fn update(&mut self, message: Message, _: &mut Window) -> Task<Message> {
         match message {
             Message::GetTemperature => {
-                return Some(Task::new(async { fetch_weather().await.unwrap() }));
+                return Task::new(async { fetch_weather().await.unwrap() });
             }
             Message::UpdateTemperature(temperature) => {
                 self.current.temperature_2m = temperature;
-                None
+                Task::none()
             }
         }
     }

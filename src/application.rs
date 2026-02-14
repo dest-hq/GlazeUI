@@ -21,7 +21,7 @@ use winit::{
 pub fn start<M: Clone + Send + 'static, App>(
     app: App,
     view_fn: fn(&mut App) -> Widget<M>,
-    #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
 ) -> Run<M, App> {
     Run::new(app, view_fn, update_fn)
@@ -37,7 +37,7 @@ pub struct Run<M: Clone + Send + 'static, App: 'static> {
     window_settings: WindowSettings,
     view_fn: fn(&mut App) -> Widget<M>,
     #[cfg(feature = "async")]
-    update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))]
     update_fn: fn(&mut App, M, &mut Window),
     backend: Backend,
@@ -72,7 +72,7 @@ impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
     pub fn new(
         user_struct: App,
         view_fn: fn(&mut App) -> Widget<M>,
-        #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+        #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
         #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
     ) -> Self {
         Self {

@@ -35,7 +35,7 @@ pub struct Application<M: Clone + Send + 'static, App: 'static> {
     pub user_struct: App,
     pub view_fn: fn(&mut App) -> Widget<M>,
     #[cfg(feature = "async")]
-    pub update_fn: fn(&mut App, M, &mut Window) -> Option<Task<M>>,
+    pub update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))]
     pub update_fn: fn(&mut App, M, &mut Window),
     pub background: Color,
