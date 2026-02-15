@@ -109,9 +109,16 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
                 // Remove all id's that was created in the past
                 clear_counter();
 
+                // Create copy of window and give that to user, with that he can edit the window settings
+                let mut user_window = UserWindow {
+                    window: window.clone(),
+                    background: &mut self.application.background,
+                    eventloop: event_loop,
+                };
+
                 let mut layout = LayoutEngine::new();
                 let view_fn = self.application.view_fn;
-                let ui = view_fn(&mut self.application.user_struct);
+                let ui = view_fn(&mut self.application.user_struct, &mut user_window);
 
                 let scale = window.scale_factor();
 
@@ -213,7 +220,7 @@ impl<M: Clone + Send + 'static, App> ApplicationHandler<UserEvent<M>> for Progra
 
                         // Get the root widget
                         let view_fn = self.application.view_fn;
-                        let ui = view_fn(&mut self.application.user_struct);
+                        let ui = view_fn(&mut self.application.user_struct, &mut user_window);
 
                         check_click(
                             &mut user_window,

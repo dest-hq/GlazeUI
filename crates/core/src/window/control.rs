@@ -19,6 +19,28 @@ impl<'window> Window<'window> {
         self.window.set_title(title);
     }
 
+    /// Window width
+    pub fn width(&mut self) -> u32 {
+        self.window.inner_size().width
+    }
+
+    /// Window height
+    pub fn height(&mut self) -> u32 {
+        self.window.inner_size().height
+    }
+
+    pub fn is_decorated(&mut self) -> bool {
+        self.window.is_decorated()
+    }
+
+    pub fn is_maximized(&mut self) -> bool {
+        self.window.is_maximized()
+    }
+
+    pub fn is_resizable(&mut self) -> bool {
+        self.window.is_resizable()
+    }
+
     pub fn request_redraw(&mut self) {
         self.window.request_redraw();
     }

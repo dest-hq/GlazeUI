@@ -45,7 +45,7 @@ impl Timer {
         }
     }
 
-    fn view(&mut self) -> Widget<Message> {
+    fn view(&mut self, _: &mut Window) -> Widget<Message> {
         let can_start_timer = label(&format!("You can start timer?: {}", self.can_start))
             .size(25)
             .build();

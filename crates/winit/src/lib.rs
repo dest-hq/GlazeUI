@@ -33,7 +33,7 @@ pub mod window;
 
 pub struct Application<M: Clone + Send + 'static, App: 'static> {
     pub user_struct: App,
-    pub view_fn: fn(&mut App) -> Widget<M>,
+    pub view_fn: fn(&mut App, &mut Window) -> Widget<M>,
     #[cfg(feature = "async")]
     pub update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))]
@@ -94,6 +94,7 @@ impl<M: Clone + Send + 'static, App: 'static> Program<M, App> {
         background: Color,
         window_size: (u32, u32),
     ) {
+        scene.reset();
         let color = &(background.r, background.g, background.b, background.a);
 
         draw_rectangle(

@@ -60,7 +60,7 @@ impl Weather {
         }
     }
 
-    fn view(&mut self) -> Widget<Message> {
+    fn view(&mut self, _: &mut Window) -> Widget<Message> {
         let temperature = self.current.temperature_2m;
         let temperature = label(&format!("{}°C", temperature)).size(25).build();
         let get_temperature = button("Get Temperature")

@@ -44,7 +44,7 @@ impl ArrayCount {
         }
     }
 
-    fn view(&mut self) -> Widget<Message> {
+    fn view(&mut self, _: &mut Window) -> Widget<Message> {
         let add_increment = button("Add Increment Counter")
             .color(Color::rgb(54, 104, 237))
             .width(250)

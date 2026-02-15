@@ -43,7 +43,7 @@ impl RandomCat {
         }
     }
 
-    fn view(&mut self) -> Widget<Message> {
+    fn view(&mut self, _: &mut Window) -> Widget<Message> {
         let cat_image = if let Some(bytes) = &self.image_bytes {
             image()
                 .from_bytes(bytes.as_bytes(), Some(700), Some(500))

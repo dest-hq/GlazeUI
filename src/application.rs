@@ -20,7 +20,7 @@ use winit::{
 // Helper to start app
 pub fn start<M: Clone + Send + 'static, App>(
     app: App,
-    view_fn: fn(&mut App) -> Widget<M>,
+    view_fn: fn(&mut App, &mut Window) -> Widget<M>,
     #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
 ) -> Run<M, App> {
@@ -35,7 +35,7 @@ struct WindowSettings {
 pub struct Run<M: Clone + Send + 'static, App: 'static> {
     user_struct: App,
     window_settings: WindowSettings,
-    view_fn: fn(&mut App) -> Widget<M>,
+    view_fn: fn(&mut App, &mut Window) -> Widget<M>,
     #[cfg(feature = "async")]
     update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
     #[cfg(not(feature = "async"))]
@@ -71,7 +71,7 @@ fn get_fallback_backend() -> Backend {
 impl<M: Clone + Send + 'static, App: 'static> Run<M, App> {
     pub fn new(
         user_struct: App,
-        view_fn: fn(&mut App) -> Widget<M>,
+        view_fn: fn(&mut App, &mut Window) -> Widget<M>,
         #[cfg(feature = "async")] update_fn: fn(&mut App, M, &mut Window) -> Task<M>,
         #[cfg(not(feature = "async"))] update_fn: fn(&mut App, M, &mut Window),
     ) -> Self {

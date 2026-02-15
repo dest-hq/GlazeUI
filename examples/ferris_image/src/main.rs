@@ -20,7 +20,8 @@ enum Message {}
 
 impl Image {
     fn update(&mut self, _: Message, _: &mut Window) {}
-    fn view(&mut self) -> Widget<Message> {
+
+    fn view(&mut self, _: &mut Window) -> Widget<Message> {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("src")
             .join("assets")
